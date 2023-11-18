@@ -1,0 +1,729 @@
+package unittesting;
+
+import java.awt.AWTException;
+import java.awt.Robot;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
+import java.awt.image.RenderedImage;
+import java.io.IOException;
+
+import com.hp.lft.sdk.GeneralLeanFtException;
+import com.hp.lft.sdk.RegExpProperty;
+import com.hp.lft.sdk.ReplayObjectNotFoundException;
+import com.hp.lft.sdk.insight.InsightDescription;
+import com.hp.lft.sdk.insight.InsightObject;
+import com.hp.lft.sdk.web.Browser;
+import com.hp.lft.sdk.web.BrowserDescription;
+import com.hp.lft.sdk.web.BrowserFactory;
+import com.hp.lft.sdk.web.BrowserType;
+import com.hp.lft.sdk.web.Button;
+import com.hp.lft.sdk.web.ButtonDescription;
+import com.hp.lft.sdk.web.EditField;
+import com.hp.lft.sdk.web.EditFieldDescription;
+import com.hp.lft.sdk.web.EventInfoFactory;
+import com.hp.lft.sdk.web.MouseEventTypes;
+import com.hp.lft.sdk.web.WebElement;
+import com.hp.lft.sdk.web.WebElementDescription;
+
+import appmodels.DiscoveryUIModel;
+import appmodels.DiscoveryUIModel.InnoWakeDiscoveryPage;
+import appmodels.MiningDashboardModel;
+import appmodels.MiningDashboardModel.InnoWakeMiningPage;
+
+/**
+ * Provides some useful methods for writing leanft tests for the browser
+ */
+public abstract class BrowserOperations extends UnitTestClassBase {
+	private static final String BUTTON = "BUTTON";
+	private static final String LOGIN = "Log In";
+	private static final String SUBMIT = "submit";
+	private static appmodels.MiningDashboardModel.InnoWakeMiningPage miningPage;
+	/** Browser variable */
+	private static Browser browser;
+	/** String variable MINING_USERNAME to save code */
+	private static final String MINING_USERNAME = "mining.username";
+	/** String variable MINING_PASSWORD to save code */
+	private static final String MINING_PASSWORD = "mining.password";
+	/** String variable ORIENTDB_USERNAME to save code */
+	private static final String ORIENTDB_USERNAME = "orientdb.username";
+	/** String variable ORIENTDB_PASSWORD to save code */
+	private static final String ORIENTDB_PASSWORD = "orientdb.password";
+	/** String variable DISCOVERY_USERNAME to save code */
+	private static final String DISCOVERY_USERNAME = "discovery.username";
+	/** String variable DISCOVERY_PASSWORD to save code */
+	private static final String DISCOVERY_PASSWORD = "discovery.password";
+
+	/**
+	 * Getter for the browser field
+	 * @return The browser field
+	 */
+	public static Browser getBrowser() {
+		return browser;
+	}
+
+	/**
+	 * Performs a login to the mining UI in the browser
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	public static void login() throws GeneralLeanFtException {
+		waitUntilActionFinished(10);
+		Browser miningBrowser = BrowserFactory.attach(new BrowserDescription.Builder().title("Login - mining").build());
+		InnoWakeMiningPage miningPage = getMiningPage(miningBrowser);
+		//if still logged in the input fields can't be found
+		try {
+			miningPage.LogonPage().UsernameField().setSecure(PropertyProvider.getProperty(MINING_USERNAME));
+			miningPage.LogonPage().PasswordField().setSecure(PropertyProvider.getProperty(MINING_PASSWORD));
+			waitUntilActionFinished(2);
+			miningPage.LogonPage().LoginButton().click();
+		} catch (ReplayObjectNotFoundException e) {
+			System.out.println("still logged in");
+		}
+	}
+
+	/**
+	 * Performs a login to the mining UI in the browser when using localhost
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	public static void loginLocalhost() throws GeneralLeanFtException {
+		waitUntilActionFinished(10);
+		Browser miningBrowser = BrowserFactory.attach(new BrowserDescription.Builder().title("Login").build());
+		InnoWakeMiningPage miningPage = getMiningPage(miningBrowser);
+		//if still logged in the input fields can't be found
+		try {
+			miningPage.LogonPage().UsernameField().setSecure(PropertyProvider.getProperty(MINING_USERNAME));
+			miningPage.LogonPage().PasswordField().setSecure(PropertyProvider.getProperty(MINING_PASSWORD));
+			waitUntilActionFinished(2);
+			miningPage.LogonPage().LoginButtonLocalhost().click();
+		} catch (ReplayObjectNotFoundException e) {
+			System.out.println("still logged in");
+		}
+	}
+	
+	/**
+	 * Performs a login to the discovery UI in the browser
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	public static void discoveryLogin() throws GeneralLeanFtException {
+		browser = getBrowser();
+		InnoWakeDiscoveryPage innoWakeDiscoveryPage = getDiscoveryPage(browser);
+		innoWakeDiscoveryPage.LoginPage().UsernameField().setSecure(PropertyProvider.getProperty(DISCOVERY_USERNAME));
+		innoWakeDiscoveryPage.LoginPage().PasswordField().setSecure(PropertyProvider.getProperty(DISCOVERY_PASSWORD));
+		waitUntilActionFinished(2);
+		innoWakeDiscoveryPage.LoginPage().LoginButton().click();
+	}
+	
+	/**
+	 * Starts the browser, logs in the web ui, if logged out
+	 * 
+	 * @param miningServerURL
+	 * @throws GeneralLeanFtException
+	 */
+	public static void logInIfLoggedOut(String miningServerURL) throws GeneralLeanFtException {
+		browser = BrowserFactory.launch(BrowserType.CHROME);
+		browser.navigate(miningServerURL);
+		browser.sync();
+		InnoWakeMiningPage miningPage = getMiningPage(browser);
+
+		/* If logged out, then login */
+		if (miningPage.LogonPage().LoginButton().exists()) {
+			login();
+		}
+		if (miningPage.LogonPage().LoginButtonLocalhost().exists()) {
+			loginLocalhost();
+		}
+		waitUntilActionFinished(5);
+	}
+
+	public static void miningLogout() throws GeneralLeanFtException {
+		browser = getBrowser();
+		InnoWakeMiningPage miningPage = new MiningDashboardModel(browser).InnoWakeMiningPage();
+		miningPage.AvatarWebElement().fireEvent(EventInfoFactory.createMouseEventInfo(MouseEventTypes.ON_MOUSE_ENTER));
+		miningPage.LogoutWebElement().click();
+	}
+
+	/**
+	 * Open the mining UI on a given URL in the webbrowser and log in
+	 * 
+	 * @param miningServerURL The URL of the mining server
+	 * @throws GeneralLeanFtException
+	 */
+	public static void openBrowser(String miningServerURL) throws GeneralLeanFtException {
+		browser = BrowserFactory.launch(BrowserType.CHROME);
+		waitUntilActionFinished(4);
+		browser.navigate(miningServerURL);
+		browser.sync();
+		waitUntilActionFinished(4);
+		login();
+	}
+	
+	/**
+	 * Open the Discovery UI in the browser.
+	 * 
+	 * @param miningServerURL The URL of the mining server
+	 * @throws GeneralLeanFtException
+	 */
+	public static void openBrowserForDiscovery(String discoveryURL) throws GeneralLeanFtException {
+		browser = BrowserFactory.launch(BrowserType.CHROME);
+		waitUntilActionFinished(4);
+		browser.navigate(discoveryURL);
+		browser.sync();
+		waitUntilActionFinished(4);
+	}
+
+	/**
+	 * Logs into web UI using the EditField elements in the login page.
+	 * 
+	 * @param miningServerURL
+	 * @throws GeneralLeanFtException
+	 */
+	public static void openBrowserNew(String miningServerURL) throws GeneralLeanFtException {
+		browser = BrowserFactory.launch(BrowserType.CHROME);
+		waitUntilActionFinished(4);
+		browser.navigate(miningServerURL);
+		browser.sync();
+		waitUntilActionFinished(4);
+		browser.describe(EditField.class,
+				new EditFieldDescription.Builder().name("WebEdit").tagName("INPUT").type("text").build())
+				.setSecure(PropertyProvider.getProperty(MINING_USERNAME));
+		browser.describe(EditField.class,
+				new EditFieldDescription.Builder().name("WebEdit").tagName("INPUT").type("password").build())
+				.setSecure(PropertyProvider.getProperty(MINING_PASSWORD));
+		browser.describe(Button.class,
+				new ButtonDescription.Builder().buttonType(SUBMIT).name(LOGIN).tagName(BUTTON).build()).click();
+		waitUntilActionFinished(2);
+	}
+
+	/**
+	 * Open the orient db studio on a given URL in the webbrowser and log in
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	public static void openOrientDBStudio(String miningServerURL) throws GeneralLeanFtException {
+		browser = BrowserFactory.launch(BrowserType.CHROME);
+		waitUntilActionFinished(4);
+		browser.navigate(miningServerURL.replace("8080", "2480"));
+		browser.sync();
+		waitUntilActionFinished(5);
+		MiningDashboardModel dashboard = new MiningDashboardModel(browser);
+		dashboard.orientDBStudioPage().DatabaseValue().select("mining");
+		dashboard.orientDBStudioPage().UsernameWebEditField()
+				.setSecure(PropertyProvider.getProperty(ORIENTDB_USERNAME));
+		dashboard.orientDBStudioPage().PasswordWebEditField()
+				.setSecure(PropertyProvider.getProperty(ORIENTDB_PASSWORD));
+		dashboard.orientDBStudioPage().ConnectButton().click();
+	}
+
+	/**
+	 * Logs out from the mining UI closes all browser tabs and performs a fresh
+	 * login in a new browser tab
+	 * 
+	 * @param miningServerURL
+	 * @throws GeneralLeanFtException
+	 */
+	public static void safeLogin(String miningServerURL) throws GeneralLeanFtException {
+		browser = BrowserFactory.launch(BrowserType.CHROME);
+		browser.navigate(miningServerURL);
+		browser.sync();
+		
+		InnoWakeMiningPage miningPage = getMiningPage(browser);
+
+		/* If already logged in, then logout and close the browser. */
+		if (miningPage.LogonPage().LoginButton().exists()) {
+			miningLogout();
+			browser.closeAllTabs();
+			browser.sync();
+			waitUntilActionFinished(5);
+		}
+
+		/* Login to the Mining UI. */
+		openBrowser(miningServerURL);
+	}
+	
+	/**
+	 * Checks whether a given web table entry exists in the currently displayed browser
+	 * @param innerText
+	 * @return true if the entry exists
+	 * @throws GeneralLeanFtException
+	 */
+	public static boolean lookIfWebTableEntryExists(String innerText) throws GeneralLeanFtException {
+		browser = getBrowser();
+	    return browser.describe(WebElement.class,
+					new WebElementDescription.Builder().innerText(new RegExpProperty(".*" + innerText + ".*")).tagName("TD").index(0).build()).exists();
+	}
+	
+	/**
+	 * Checks whether a given web table column exists in the currently displayed browser
+	 * @param innerText
+	 * @return true if the entry exists
+	 * @throws GeneralLeanFtException
+	 */
+	public static boolean lookIfWebTableColumnExists(String innerText) throws GeneralLeanFtException {
+		browser = getBrowser();
+	    return browser.describe(WebElement.class,
+					new WebElementDescription.Builder().innerText(new RegExpProperty(".*" + innerText + ".*")).tagName("TH").index(0).build()).exists();
+	}
+	
+	/**
+	 * Checks whether a given web span entry exists in the currently displayed browser
+	 * @param innerText
+	 * @return true if the entry exists
+	 * @throws GeneralLeanFtException
+	 */
+	public static boolean lookIfWebSpansEntryExistsRegex(String innerText) throws GeneralLeanFtException {
+		browser = getBrowser();	
+		return browser.describe(WebElement.class,new WebElementDescription.Builder()
+					 .tagName("SPAN").innerText(new RegExpProperty(".*" + innerText + ".*")).index(0).build()).exists();
+	}
+	
+	/**
+	 * Checks whether a given web entry exists in the currently displayed browser
+	 * @param tagName
+	 * @param innerText
+	 * @return true if the entry exists
+	 * @throws GeneralLeanFtException
+	 */
+	public static boolean lookIfWebTagEntryExists(String tagName, String innerText) throws GeneralLeanFtException {
+		browser = getBrowser();
+	    return browser.describe(WebElement.class,
+					new WebElementDescription.Builder().innerText(innerText).tagName(tagName).index(0).build()).exists();
+	}
+	
+	/**
+	 * returns the current mining page of the given browser object
+	 * @param browser
+	 * @return miningPage
+	 * @throws GeneralLeanFtException
+	 */
+	public static InnoWakeMiningPage getMiningPage(Browser browser) throws GeneralLeanFtException {
+		return new MiningDashboardModel(browser).InnoWakeMiningPage();
+	}
+	
+	/**
+	 * returns the current discovery page of the given browser object
+	 * @param browser
+	 * @return discoveryPage
+	 * @throws GeneralLeanFtException
+	 */
+	public static InnoWakeDiscoveryPage getDiscoveryPage(Browser browser) throws GeneralLeanFtException {
+		return new DiscoveryUIModel(browser).InnoWakeDiscoveryPage();
+	}
+	
+	/**
+	 * Open the downloaded file from the browser download page.	 
+	 */
+	public static void openDownloadFile() {	
+		/* Open the browser download page. */
+    	pressKeys(KeyEvent.VK_CONTROL, KeyEvent.VK_J);
+    	waitUntilActionFinished(4);
+    	
+    	/* Go to the most recent downloaded file entry. */
+    	pressKeys(KeyEvent.VK_TAB);
+    	waitUntilActionFinished(4);
+    	
+    	pressKeys(KeyEvent.VK_TAB);
+    	waitUntilActionFinished(4);
+    	
+    	/* Open the file. */
+    	pressEnter();
+    	waitUntilActionFinished(4);
+	}
+	
+	/**
+	 * Opens the web UI project page and creates a new client with name as "Testclient".
+	 * 
+	 * @param name the name of the new project
+	 * @throws GeneralLeanFtException
+	 */
+	public static void createTestClient(String serverUrl) throws GeneralLeanFtException {
+		/** open browser and navigate to the project page **/
+		logInIfLoggedOut(serverUrl);
+		InnoWakeMiningPage miningPage = getMiningPage(browser);
+
+		/** create client **/
+		miningPage.ClientsPage().AddClientButton().click();
+		waitUntilActionFinished(3);
+		miningPage.ClientsPage().EnterClientNameField().setValue("Testclient");
+		waitUntilActionFinished(2);
+    	miningPage.SubmitButton().click();
+    	waitUntilActionFinished(2);	
+	}
+	
+	/**
+	 * Opens the web UI project page and creates a new project with the given name in Testclient client.
+	 * 
+	 * @param name the name of the new project
+	 * @throws GeneralLeanFtException
+	 */
+	public static void createProjectInTestClient(String name, String serverUrl) throws GeneralLeanFtException {
+		InnoWakeMiningPage miningPage = getMiningPage(browser);
+		if (miningPage.ClientsPage().TestclientCard().exists()) {
+			miningPage.ClientsPage().TestclientCard().click();
+	    	waitUntilActionFinished(4);
+		} else {
+			miningPage.MiningHomeIcon().click();
+	    	waitUntilActionFinished(4);
+			miningPage.ClientsPage().TestclientCard().click();
+	    	waitUntilActionFinished(4);
+		}
+		/** create project **/
+	   	miningPage.ProjectsPage().AddProjectButton().click();
+    	waitUntilActionFinished(3);
+    	miningPage.ProjectsPage().EnterProjectTitleField().setValue(name);
+    	waitUntilActionFinished(2);
+    	miningPage.SubmitButton().click();
+    	waitUntilActionFinished(2);	
+	}
+	
+	/**
+	 * Opens the web UI project page and creates a new project with the given name.
+	 * 
+	 * @param name the name of the new project
+	 * @throws GeneralLeanFtException
+	 */
+	public static void createTestProject(String name, String serverUrl) throws GeneralLeanFtException {
+		/** open browser and navigate to the project page **/
+		logInIfLoggedOut(serverUrl);
+		InnoWakeMiningPage miningPage = getMiningPage(browser);
+		if (miningPage.ClientsPage().DemoClient1Card().exists()) {
+			miningPage.ClientsPage().DemoClient1Card().click();
+	    	waitUntilActionFinished(4);
+		} else {
+			miningPage.MiningHomeIcon().click();
+	    	waitUntilActionFinished(4);
+			miningPage.ClientsPage().DemoClient1Card().click();
+	    	waitUntilActionFinished(4);
+		}
+		/** create project **/
+	   	miningPage.ProjectsPage().AddProjectButton().click();
+    	waitUntilActionFinished(3);
+    	miningPage.ProjectsPage().EnterProjectTitleField().setValue(name);
+    	waitUntilActionFinished(2);
+    	miningPage.SubmitButton().click();
+    	waitUntilActionFinished(2);	
+	}
+	
+	/**
+	 * Opens the web UI project page and deletes a project with the given name.
+	 * 
+	 * @param name the name of the project to be deleted
+	 * @throws GeneralLeanFtException
+	 */
+	public static void deleteTestProject(String name) throws GeneralLeanFtException {
+		/** open browser and navigate to the project page **/
+		browser = getBrowser();
+		InnoWakeMiningPage miningPage = BrowserOperations.getMiningPage(browser);
+    	waitUntilActionFinished(2);
+		miningPage.MiningHomeIcon().click();
+    	waitUntilActionFinished(4);
+    	
+    	// Session Expired scenario
+    	if (miningPage.LogonPage().UsernameField().exists()) {
+    	    System.out.println("Re-login required.");
+    	    login();
+    	    waitUntilActionFinished(4);
+    	}
+    	
+    	// Identify and click the client card if exists (Re-direct bug)
+    	if (miningPage.ClientsPage().DemoClient1Card().exists()) {
+    	    miningPage.ClientsPage().DemoClient1Card().click();
+    	    waitUntilActionFinished(4);
+    	}
+		
+		// Identify the Project card 
+		WebElement projectCard = miningPage.ProjectsPage().describe(WebElement.class, 
+				new WebElementDescription.Builder().tagName("NZ-CARD").innerText(new RegExpProperty(name + ".*")).build());
+		WebElement projectCardEditField = projectCard.describe(WebElement.class,
+				new WebElementDescription.Builder().tagName("I").className("anticon preview-card__elipsis-action ant-dropdown-trigger anticon-ellipsis ng-star-inserted").build());
+		projectCardEditField.click();
+    	waitUntilActionFinished(2);
+    	miningPage.ProjectsPage().DeleteProject().click();
+    	waitUntilActionFinished(2);
+    	miningPage.DeleteCheckbox().click();
+    	waitUntilActionFinished(1);
+    	miningPage.DeleteButton().click();
+    	waitUntilActionFinished(2);
+    }
+	
+	/**
+	 * Logs into the mining web ui with the given credentials
+	 * 
+	 * @param USERNAME
+	 * @param password
+	 * @throws GeneralLeanFtException 
+	 */
+	public static void loginWithCredentials(String username, String password) throws GeneralLeanFtException {
+		Browser miningBrowser = BrowserFactory.attach(new BrowserDescription.Builder().title("Login - mining").build());
+		InnoWakeMiningPage miningPage = getMiningPage(miningBrowser);
+		miningPage.LogonPage().UsernameField().setSecure(username);
+		miningPage.LogonPage().PasswordField().setSecure(password);
+		waitUntilActionFinished(2);
+		miningPage.LogonPage().LoginButton().click();
+	}
+
+	/**
+	 * Opens the web UI project page and deletes a large project with the given name. (increased wait)
+	 * 
+	 * @param name the name of the project to be deleted
+	 * @throws GeneralLeanFtException
+	 */
+	public static void deleteLargeTestProject(String name) throws GeneralLeanFtException {
+		/** open browser and navigate to the project page **/
+		browser = getBrowser();
+		InnoWakeMiningPage miningPage = BrowserOperations.getMiningPage(browser);
+    	waitUntilActionFinished(20);
+		miningPage.MiningHomeIcon().click();
+    	waitUntilActionFinished(20);
+    	
+    	// Session Expired scenario
+    	if (miningPage.LogonPage().UsernameField().exists()) {
+    	    System.out.println("Re-login required.");
+    	    login();
+    	    waitUntilActionFinished(20);
+    	}
+    	
+    	// Identify and click the client card if exists (Re-direct bug)
+    	if (miningPage.ClientsPage().DemoClient1Card().exists()) {
+    	    miningPage.ClientsPage().DemoClient1Card().click();
+    	    waitUntilActionFinished(20);
+    	}
+		
+		// Identify the Project card 
+		WebElement projectCard = miningPage.ProjectsPage().describe(WebElement.class, 
+				new WebElementDescription.Builder().tagName("NZ-CARD").innerText(new RegExpProperty(name + ".*")).build());
+		WebElement projectCardEditField = projectCard.describe(WebElement.class,
+				new WebElementDescription.Builder().tagName("I").className("anticon preview-card__elipsis-action ant-dropdown-trigger anticon-ellipsis ng-star-inserted").build());
+		projectCardEditField.click();
+    	waitUntilActionFinished(2);
+    	miningPage.ProjectsPage().DeleteProject().click();
+    	waitUntilActionFinished(2);
+    	miningPage.DeleteCheckbox().click();
+    	waitUntilActionFinished(1);
+    	miningPage.DeleteButton().click();
+    	waitUntilActionFinished(2);		
+	}
+	
+	/**
+	 * Selects a portion of text displayed in CAE
+	 * 
+	 * @param startLine
+	 * @param endLine
+	 * 
+	 * @throws GeneralLeanFtException
+	 * @throws AWTException
+	 */
+	public static void selectTextInMiningCodeViewer(int startLineNo, int endLineNo) throws GeneralLeanFtException, AWTException {
+		WebElement start = browser.describe(WebElement.class, new WebElementDescription.Builder()
+				.className("line-numbers")
+				.innerText(String.valueOf(startLineNo))
+				.tagName("DIV").build());
+		Robot robot = new Robot();
+		robot.mouseMove(start.getAbsoluteLocation().x + 64, start.getAbsoluteLocation().y);
+		robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+		WebElement end = browser.describe(WebElement.class, new WebElementDescription.Builder()
+				.className("line-numbers")
+				.innerText(String.valueOf(endLineNo))
+				.tagName("DIV").build());
+		robot.mouseMove(end.getAbsoluteLocation().x + 800, end.getAbsoluteLocation().y);
+		robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+		waitUntilActionFinished(2);
+	}
+	
+	/**
+	 * This method will click on Allow button when multiple files are downloaded simultaenously
+	 * 
+	 * @param miningPage
+	 * 
+	 * @throws GeneralLeanFtException
+	 * @throws IOException 
+	 */
+	public static void allowParallelDownloads(InnoWakeMiningPage miningPage) throws GeneralLeanFtException, IOException {
+		RenderedImage allowParallelDownloadsButtonImage = ScreenshotUtils.getImageFromFilePath(getScreenshotDirectory() + "\\testcases.mining\\WebUIGeneralTest\\AllowParallelDownloads.PNG");
+		InsightObject allowParallelDownloadsButton = miningPage.describe(InsightObject.class, new InsightDescription(allowParallelDownloadsButtonImage, 80));
+		if (allowParallelDownloadsButton.exists()) {
+			allowParallelDownloadsButton.click();
+		}
+	}
+	
+	/**
+     * Clicks on the filter in the column @param columnNum of the customizable Module/Annotation table.
+     * 
+     * @return the filter object
+     * 
+     * @throws GeneralLeanFtException
+     */
+    public static WebElement clickOnFilterOfCustomizableTable(int columnNum) throws GeneralLeanFtException {
+    	InnoWakeMiningPage miningPage = getMiningPage(getBrowser());
+    	WebElement tableFilter = miningPage.describe(WebElement.class, new WebElementDescription.Builder()
+				.className(new RegExpProperty(".*anticon-filter.*"))
+				.index(columnNum)
+				.tagName("I").build());
+    	tableFilter.click();
+    	return tableFilter;
+    }
+    
+    /**
+     * Validates if the column @param columnNumArray in the module table contains @param expectedColumnValue
+     * 
+     * @throws GeneralLeanFtException
+     * @throws CloneNotSupportedException
+     */
+    public static void checkIfTableFiltersAreApplied(int[] columnNumArray, String expectedColumnValue) throws GeneralLeanFtException, CloneNotSupportedException {
+    	InnoWakeMiningPage miningPage = getMiningPage(getBrowser());
+    	WebElement[] moduleNameTable = miningPage.describe(WebElement.class, new WebElementDescription.Builder()
+				.index(0)
+				.tagName("TBODY").build()).findChildren(WebElement.class, new WebElementDescription.Builder()
+						.tagName("TR").build());
+    	assertAndVerify(true, moduleNameTable.length > 1); // This line is added to ensure the test fails when there is no data in the table.
+    	for (int col : columnNumArray) {
+			for (int i = 1; i < moduleNameTable.length; i ++) {
+				WebElement[] moduleNameTableColumn = moduleNameTable[i].findChildren(WebElement.class, new WebElementDescription.Builder()
+							.tagName("TD").build());
+				if (expectedColumnValue.contains("<")) {
+					if (! moduleNameTableColumn[col].getInnerText().isEmpty()) {
+						assertAndVerifyContains(moduleNameTableColumn[col].getInnerHTML().trim(), expectedColumnValue);
+					}
+				} else {
+					assertAndVerify(expectedColumnValue, moduleNameTableColumn[col].getInnerText().trim());
+				}
+			}
+		}
+    }
+    
+    /**
+	 * Sets checkbox value @param innerText of given columns in customizable table.
+	 * 
+	 * @param innerText
+	 * @throws GeneralLeanFtException
+	 * @throws CloneNotSupportedException
+	 */
+	public static void setCheckBoxValueInCustomizableTable(String innerText) throws GeneralLeanFtException, CloneNotSupportedException {
+		WebElement parentWebElement = browser.describe(WebElement.class,
+				new WebElementDescription.Builder().innerText(innerText).tagName("NZ-TREE-NODE").build());
+		WebElement childWebElement = parentWebElement.findChildren(WebElement.class,
+				new WebElementDescription.Builder().tagName("nz-tree-node-checkbox").build())[0];
+		childWebElement.click();
+	}
+	
+	/**
+	 * This method will compare columns order from csv file to table Data
+	 *  
+	 * @param filePath
+	 * @throws GeneralLeanFtException
+	 * @throws CloneNotSupportedException
+	 */
+	public static void checkColumnsInCSVWithTableData(String tableName, String filePath) throws GeneralLeanFtException, CloneNotSupportedException {
+		browser = getBrowser();
+		miningPage = getMiningPage(browser);
+		WebElement[] tableColumnsList = miningPage.TableHead().findChildren(WebElement.class, new WebElementDescription.Builder().tagName("TH").build());
+		String[] columnValues = readNthLineOfAFile(filePath, 1).replaceAll("\"", "").split(",");
+		if (tableName.equals("Modules") || tableName.equals("Chart Data")) {
+			assertAndVerify(tableColumnsList.length, columnValues.length);
+		}else if (tableName.equals("Annotations")) {
+			assertAndVerify(tableColumnsList.length - 1, columnValues.length);
+		}
+		for (int i = 0; i < columnValues.length; i++) {
+			assertAndVerify(tableColumnsList[i].getInnerText().toString().trim(), columnValues[i].trim());
+		}
+	}
+	
+	/**
+	 * This method will return sorting status of particular column based on @param index
+	 * 
+	 * @return boolean array of all status
+	 * @throws GeneralLeanFtException
+	 */
+	public static boolean[] getStatus(int index) throws GeneralLeanFtException {
+		browser = getBrowser();
+		boolean ascendingOrder = false;
+		boolean descendingOrder = false;
+		boolean defaultOrder = false;
+		WebElement ascendingIcon = browser.describe(WebElement.class, new WebElementDescription.Builder().xpath("//i[@nztype='caret-up']").index(index).build());
+		WebElement descendingIcon = browser.describe(WebElement.class, new WebElementDescription.Builder().xpath("//i[@nztype='caret-down']").index(index).build());
+		
+		if (ascendingIcon.getAttribute("class").contains("active") && ! (descendingIcon.getAttribute("class").contains("active"))) {
+			ascendingOrder = true;
+		}
+		
+		if (descendingIcon.getAttribute("class").contains("active") && ! (ascendingIcon.getAttribute("class").contains("active"))) {
+			descendingOrder = true;
+		}
+		
+		if (! (ascendingIcon.getAttribute("class").contains("active") && ! (descendingIcon.getAttribute("class").contains("active")))) {
+			defaultOrder = true;
+		}
+		boolean[] allStatus= {ascendingOrder, descendingOrder, defaultOrder};
+		return allStatus;
+	}
+	
+	/**
+   	 * Searches a module with text defined by @param innerText,
+   	 * 
+   	 * @returns last scan of the module
+   	 * 
+   	 * @throws GeneralLeanFtException
+   	 */
+    public static String searchModuleForTimestamp(String innerText) throws GeneralLeanFtException {
+    	miningPage = getMiningPage(browser);
+    	miningPage.ModulesPage().MagnifierButton().click();
+		waitUntilTestObjectExists(miningPage.ModulesPage().ModuleNameEditField());
+		miningPage.ModulesPage().ModuleNameEditField().setValue(innerText);
+		waitUntilActionFinished(5);
+		miningPage.ModulesPage().SearchButton().click();
+		waitUntilActionFinished(2);
+		return miningPage.ModulesPage().TimestampTableElement().getInnerText().trim();
+    }
+    
+    /**
+	 * Clicks on the module with text 
+	 * 
+	 * @param innerText
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	public static void clickOnModule(String innerText) throws GeneralLeanFtException {
+		miningPage.describe(WebElement.class, new WebElementDescription.Builder()
+				.className("ng-star-inserted")
+				.innerText(innerText + " ")
+				.tagName("A")
+				.index(0).build()).click();
+	}
+	
+	/**
+   	 * Searches a module with text defined by @param innerText,
+   	 * 
+   	 * @throws GeneralLeanFtException
+   	 */
+    public static void searchModule(String innerText) throws GeneralLeanFtException {
+    	miningPage = getMiningPage(browser);
+    	miningPage.ModulesPage().MagnifierButton().click();
+		waitUntilTestObjectExists(miningPage.ModulesPage().ModuleNameEditField());
+		miningPage.ModulesPage().ModuleNameEditField().setValue(innerText);
+		waitUntilActionFinished(5);
+		miningPage.ModulesPage().SearchButton().click();
+		waitUntilActionFinished(2);
+    }
+	
+    /**
+	 * Searches a module with text defined by @param innerText,
+	 * Clicks on the module and compares the type of the module with @param moduleType
+	 * 
+	 * @returns last scan of the module
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	public static String searchAndClickOnModule(String innerText, String moduleType) throws GeneralLeanFtException {
+		searchModule(innerText);
+		clickOnModule(innerText);
+		waitUntilActionFinished(2);
+		if (! moduleType.isEmpty()) {
+			WebElement typeWebElement = browser.describe(WebElement.class, new WebElementDescription.Builder()
+					.innerText(new RegExpProperty(".*Type.*"))
+					.tagName("TR").build());
+			assertAndVerify("Type " + moduleType, typeWebElement.getInnerText());
+		}
+		return miningPage.ModuleDetailsPage().TimestampTableElement().getInnerText();
+	}
+}

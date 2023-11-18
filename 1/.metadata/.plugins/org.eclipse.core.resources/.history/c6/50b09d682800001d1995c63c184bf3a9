@@ -1,0 +1,43 @@
+package Sample;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+public class StreamMethods {
+
+	public static void main(String[] args) {
+		
+		List<String> list1 = Arrays.asList("bus", "car", "flight", "scooty", "bus", "car", "bike");
+		
+		//distinct will remove duplicate values 
+		List<String> distinctList = list1.stream().distinct().collect(Collectors.toList());
+		System.out.println(distinctList);
+		
+		//count is useful to count the elements from the stream
+		System.out.println(list1.stream().distinct().count());
+		List<Integer> list2 = Arrays.asList(10,20,25,30,35,40,45);
+		System.out.println(list2.stream().filter(n -> n%2==0 && n%5==0).count());
+		list2.stream().filter(n -> n%2==0 && n%5==0).forEach(n -> System.out.println(n));
+		
+		//limit: We can give the limit by giving the size
+		List<String> limitedList = list1.stream().limit(3).collect(Collectors.toList());
+		System.out.println(limitedList);
+		
+		//min: here comparator is used and return type is Optional interface
+		
+		Optional<Integer> min = list2.stream().min((val1, val2) -> {
+																	return val1.compareTo(val2);
+																	});
+		System.out.println(min.get()); //10
+		
+		//max: here comparator is used and return type is Optional interface
+		
+		Optional<Integer> max = list2.stream().max((val1, val2) -> {
+																	return val1.compareTo(val2);
+																	});
+		System.out.println(max.get());
+	}
+
+}

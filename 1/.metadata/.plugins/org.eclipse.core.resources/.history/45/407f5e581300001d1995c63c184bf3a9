@@ -1,0 +1,11 @@
+package testing.Interface;
+
+public class Main extends Test{
+	
+	public static void main(String[] args) {
+		Test o = new Test();
+		o.show();
+		
+	}
+
+}

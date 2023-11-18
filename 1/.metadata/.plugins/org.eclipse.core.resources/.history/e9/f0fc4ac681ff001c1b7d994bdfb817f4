@@ -1,0 +1,13 @@
+package Sample;
+
+import java.util.Arrays;
+import java.util.List;
+
+public class MapDemo1 {
+	public static void main(String[] args) {
+		List<String> l1 = Arrays.asList("kanya", "buddi", "jashu", "nithya");
+		//map  function will perform the given operation on each element in the list
+		l1.stream().map(n -> n.toUpperCase()).forEach(n -> System.out.println(n));
+	}
+
+}

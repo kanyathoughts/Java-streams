@@ -1,0 +1,11 @@
+package testing.Interface;
+
+public class Main implements Sample1{
+	
+	public static void main(String[] args) {
+		Sample1 o = new Test();
+		o.show();
+		
+	}
+
+}

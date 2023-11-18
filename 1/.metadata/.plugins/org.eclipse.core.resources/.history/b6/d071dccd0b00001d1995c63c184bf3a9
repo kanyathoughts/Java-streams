@@ -1,0 +1,10 @@
+package Sample;
+
+public class Sample1 extends Abs{
+	
+	@Override
+	public void hi(String name) {
+		super.hi(name);
+	}
+
+}

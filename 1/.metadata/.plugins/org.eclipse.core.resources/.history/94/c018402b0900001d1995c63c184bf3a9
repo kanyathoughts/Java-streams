@@ -1,0 +1,1023 @@
+package testcases.mining.webui;
+
+import java.awt.event.KeyEvent;
+import java.awt.image.RenderedImage;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.List;
+
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.FixMethodOrder;
+import org.junit.Test;
+import org.junit.runners.MethodSorters;
+
+import com.hp.lft.report.ReportException;
+import com.hp.lft.sdk.GeneralLeanFtException;
+import com.hp.lft.sdk.MouseButton;
+import com.hp.lft.sdk.RegExpProperty;
+import com.hp.lft.sdk.insight.InsightDescription;
+import com.hp.lft.sdk.insight.InsightObject;
+import com.hp.lft.sdk.web.Browser;
+import com.hp.lft.sdk.web.Table;
+import com.hp.lft.sdk.web.TableDescription;
+import com.hp.lft.sdk.web.TableRow;
+import com.hp.lft.sdk.web.WebElement;
+import com.hp.lft.sdk.web.WebElementDescription;
+
+import appmodels.MiningApplicationModel;
+import appmodels.MiningApplicationModel.MainWindow;
+import appmodels.MiningApplicationModel.MainWindow.ProjectExplorerTabControl.ProjectExplorerTreeView;
+import appmodels.MiningDashboardModel.InnoWakeMiningPage;
+import unittesting.BrowserOperations;
+import unittesting.DiscoveryOperations;
+import unittesting.MiningOperations;
+import unittesting.ParameterProvider;
+import unittesting.ScreenshotUtils;
+import unittesting.UnitTestClassBase;
+
+/**
+ * This test is used to test the mining web UI User customizable annotation table.
+ * 
+ * @see <a href="https://iris.innowake.de/browse/WQST-743">Test protocol WQST-743</a>
+ * 
+ * @author arbalasubramanian
+ */
+
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+
+public class UserCustomizableAnnotationTableTest extends UnitTestClassBase {
+
+	private static final String MINING = "mining";
+
+	private MiningApplicationModel appModel;
+	private MainWindow mainWindow;
+	private static Browser browser;
+	private static InnoWakeMiningPage miningPage;
+	private ProjectExplorerTreeView projectExplorerTreeView;
+	
+	private static final String DEFAULT_DOWNLOADS_DIR = System.getProperty("user.home") + "\\Downloads";
+	private static final String CURRENT_DOWNLOADS_DIR = System.getProperty("user.home") + "\\Downloads\\CsvDownloads";
+
+	private String workspaceDir = ParameterProvider.getParameter("workspaceDir");
+	private String miningServerURL = ParameterProvider.getParameter("miningServerURL");
+
+	/** @inheritDoc */
+	@BeforeClass
+	public static void setUpBeforeClass() throws Exception {
+		instance = new UserCustomizableAnnotationTableTest();
+		globalSetup(UserCustomizableAnnotationTableTest.class);
+		deleteOrRecreateDirectory(CURRENT_DOWNLOADS_DIR, true);
+	}
+
+	/** @throws GeneralLeanFtException 
+	 * @inheritDoc */
+	@AfterClass
+	public static void tearDownAfterClass() throws ReportException, GeneralLeanFtException {
+		browser.closeAllTabs();
+		deleteOrRecreateDirectory(CURRENT_DOWNLOADS_DIR, false);
+		globalTearDown();
+	}
+
+	@Before
+	public void setUp() throws GeneralLeanFtException {
+		browser = BrowserOperations.getBrowser();
+		appModel = new MiningApplicationModel();
+		mainWindow = appModel.MainWindow();
+		projectExplorerTreeView = mainWindow.ProjectExplorerTabControl().ProjectExplorerTreeView();
+	}
+
+	/** Step 01 not implemented as it is already covered in the mining setup. */
+
+	/**
+	 * Start your mining eclipse with a new workspace.
+	 * 
+	 * The mining eclipse is up and running. In the menu bar an additional entry
+	 * called 'mining' is listed.
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	@Test
+	public void step02() throws GeneralLeanFtException {
+		initEclipse();
+		mainWindow.MiningMenu().highlight();
+		assertAndVerify(true, appModel.MainWindow().MiningMenu().exists());
+	}
+
+	/**
+	 * In the menu bar click on Window -> Preferences. In the navigator tree of
+	 * the Preferences Window click on 'mining'. In the mining preferences page
+	 * do a Logon. Click on "Apply and Close"
+	 * 
+	 * No error messages.
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	@Test
+	public void step03() throws GeneralLeanFtException {
+		switchPerspective("Natural");
+		establishApiServerConnection(miningServerURL);
+	}
+
+	/**
+	 * Pull the following git project into the workspace:
+	 * https://gitlab.consulting.sltc.com/appmod/qef/innowake-test-projects/mining-test-projects/discovery-jumpstart.git
+	 * 
+	 * No error messages.
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	@Test
+	public void step04() throws GeneralLeanFtException {
+		importProject(workspaceDir);
+	}
+
+	/**
+	 * Click right on the project and select Properties. In the project
+	 * properties window select mining.
+	 * 
+	 * The mining project properties wizard is displayed.
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	@Test
+	public void step05() throws GeneralLeanFtException {
+		openMiningProjectProperties();
+		assertAndVerify(MINING, mainWindow.ProjectPropertiesWindow().Tree().getNode(MINING).getColumnValue(0));
+	}
+
+	/**
+	 * In the project dropdown list select Demo Client 1 - Demo Project A and click on "Apply and Close".
+	 * 
+	 * The dialog closes.
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	@Test
+	public void step06() throws GeneralLeanFtException {
+		mainWindow.ProjectPropertiesWindow().ProjectList().click();
+		mainWindow.ProjectPropertiesWindow().ProjectList().select("Demo Client 1 - Demo Project A");
+		mainWindow.ProjectPropertiesWindow().ApplyAndCloseButton().click();
+		assertAndVerify(false, mainWindow.ProjectPropertiesWindow().exists());
+		waitUntilActionFinished(2);
+	}
+
+	/**
+	 * Select the three folders "undiscovered", "undiscovered-cobol" and
+	 * "undiscovered-natural". Right-click one of the folders and select
+	 * "discovery" -> "Discover Code on Selection"
+	 * 
+	 * No error messages are displayed. The "src" folder with the discovery
+	 * results was downloaded into the workspace.
+	 * 
+	 * @throws GeneralLeanFtException
+	 * @throws CloneNotSupportedException 
+	 */
+	@Test
+	public void step07() throws GeneralLeanFtException, CloneNotSupportedException {
+		DiscoveryOperations.performDiscoverCode("undiscovered", "undiscovered-cobol", "undiscovered-natural");
+	}
+
+	/**
+	 * Click right on the "src" directory and select "discovery" -> "Discover
+	 * Metrics on Selection".
+	 * 
+	 * No error messages are displayed. The "Override Modules" dialog appears in
+	 * case there are already modules within the project. Select "Yes" in this
+	 * case.
+	 * 
+	 * @throws GeneralLeanFtException
+	 * @throws CloneNotSupportedException 
+	 */
+	@Test
+	public void step08() throws GeneralLeanFtException, CloneNotSupportedException {
+		DiscoveryOperations.performDiscoverMetrics();
+	}
+	
+	/**
+	 * Open the file MMRS7101.cbl (discovery-jumpstart > src > cobol > programs > MMRS7101.cbl).
+	 * 
+	 * The file is opened in the cobol source editor.
+	 * @throws GeneralLeanFtException
+	 */
+	@Test
+	public void step09() throws GeneralLeanFtException {
+		projectExplorerTreeView.activateNode(projectExplorerTreeView.buildNodePath(0, "src", "cobol", "programs", "MMRS7101.cbl"));
+		assertAndVerify("MMRS7101.cbl", mainWindow.EditorTabControl().getSelectedTab());
+	}
+
+	/**
+	 * Select the following code in the editor (line 11 and 12), 
+	 * click right and select mining < Create New Annotation:
+	 * 
+	 * The Annotation Editor view opens at the bottom.
+	 * 
+	 * @throws GeneralLeanFtException
+	*/
+	@Test
+	public void step10() throws GeneralLeanFtException {
+		waitUntilActionFinished(2);
+		mainWindow.StyledTextEditor().select(10, 0, 12, 20);
+		mainWindow.StyledTextEditor().click(MouseButton.RIGHT);
+		waitUntilActionFinished(2);
+		mainWindow.StyledTextEditor().MiningMenu().AnnotationMenu().select();
+		waitUntilActionFinished(5);
+		assertAndVerify("Annotation Editor", mainWindow.BottomTabControl().getSelectedTab());
+	}
+	
+	/**
+	 * Select the type Rule, the Annotation Category A and insert "Rule with category A" as description.
+	 * Click on "Save".
+	 * 
+	 * A new annotation created.
+	 * 
+	 * @throws IOException 
+	 * @throws GeneralLeanFtException
+	 * */
+	@Test
+	public void step11() throws GeneralLeanFtException, IOException {
+		mainWindow.BottomTabControl().click();
+		pressCtrlAndM();
+		waitUntilActionFinished(2);
+		RenderedImage image = ScreenshotUtils.getImageFromFilePath(getScreenshotDirectory() + "\\testcases.mining\\ModuleDetailsTest\\AnnotationTypeDropDown.png");
+		InsightObject annotationDropDown = mainWindow.describe(InsightObject.class, new InsightDescription(image, 85));
+		annotationDropDown.click();
+		waitUntilActionFinished(2);
+		pressDownArrowKey(3, 1);
+    	pressEnter();
+		pressTabKey();
+		pressEnter();
+		pressEnter();
+		pressTabKey();
+		putTextToClipboard("Rule with category A");
+		pressCtrlAndV();
+		image = ScreenshotUtils.getImageFromFilePath(getScreenshotDirectory() + "\\testcases.mining\\ModuleDetailsTest\\SaveButton.png");
+		InsightObject saveButton = mainWindow.describe(InsightObject.class, new InsightDescription(image, 85));
+		saveButton.click();
+		waitUntilActionFinished(2);
+		pressCtrlAndM();
+		mainWindow.StyledTextEditor().click();
+	}
+	
+	/**
+	 * Select the code in the editor (line 14 to 16).
+	 * Click right and select mining > Create New Annotation.
+	 * 
+	 * The Annotation Editor view opens at the bottom.
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	@Test
+	public void step12() throws GeneralLeanFtException {
+		waitUntilActionFinished(2);
+		mainWindow.StyledTextEditor().select(13, 0, 15, 20);
+		mainWindow.StyledTextEditor().click(MouseButton.RIGHT);
+		waitUntilActionFinished(2);
+		mainWindow.StyledTextEditor().MiningMenu().AnnotationMenu().select();
+		waitUntilActionFinished(5);
+		assertAndVerify("Annotation Editor", mainWindow.BottomTabControl().getSelectedTab());
+	}
+	
+	/**
+	 * Select Database as Type and Annotation Category B as Category.
+	 * Enter "Database with category B" as Description and click on "Finish".
+	 * 
+	 * A new annotation created.
+	 * 
+	 * @throws GeneralLeanFtException
+	 * @throws IOException 
+	 */
+	@Test
+	public void step13() throws GeneralLeanFtException, IOException {
+		mainWindow.BottomTabControl().click();
+		pressCtrlAndM();
+		waitUntilActionFinished(2);
+		RenderedImage image = ScreenshotUtils.getImageFromFilePath(getScreenshotDirectory() + "\\testcases.mining\\ModuleDetailsTest\\AnnotationTypeDropDown.png");
+		InsightObject annotationDropDown = mainWindow.describe(InsightObject.class, new InsightDescription(image, 85));
+		annotationDropDown.click();
+		waitUntilActionFinished(2);
+    	pressEnter();
+		pressTabKey();
+		pressEnter();
+		pressEnter();
+		pressTabKey();
+		putTextToClipboard("Database with category B");
+		pressCtrlAndV();
+		image = ScreenshotUtils.getImageFromFilePath(getScreenshotDirectory() + "\\testcases.mining\\ModuleDetailsTest\\SaveButton.png");
+		InsightObject saveButton = mainWindow.describe(InsightObject.class, new InsightDescription(image, 85));
+		saveButton.click();
+		waitUntilActionFinished(2);
+		pressCtrlAndM();
+		mainWindow.StyledTextEditor().click();
+	}
+	
+	/**
+	 * In the Project Explorer view select the files MMRS7101 and MMRS71Z1, click right and select mining > Analysis > Identify Candidates.
+	 * 
+	 * Nothing visible happens.
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	@Test
+	public void step14() throws GeneralLeanFtException {
+		projectExplorerTreeView.getNode(projectExplorerTreeView.buildNodePath(0, "src", "cobol", "programs", "MMRS7101.cbl")).openContextMenu();
+		projectExplorerTreeView.MiningMenu().AnalysisMenu().IdentifyCandidatesMenu().select();
+		waitUntilActionFinished(5);
+		projectExplorerTreeView.getNode(projectExplorerTreeView.buildNodePath(0, "src", "cobol", "programs", "MMRS71Z1.cbl")).openContextMenu();
+		projectExplorerTreeView.MiningMenu().AnalysisMenu().IdentifyCandidatesMenu().select();
+		waitUntilActionFinished(5);
+	}
+
+    /**
+     * In the Project Explorer right click on the file MMRS7101.cbl (discovery-jumpstart > src > cobol > programs > MMRS7101.cbl) and select mining > Assign Taxonomy
+     * Select the Business Process > Create Invoices taxonomy inside the opened taxonomy editor view and click on "Save".
+     * 
+     * The shared taxonomy editor view closes.
+     * 
+     * @throws GeneralLeanFtException
+     */
+    @Test
+	public void step15() throws GeneralLeanFtException {
+    	MiningOperations.openTaxonomyEditor(0, "src", "cobol", "programs", "MMRS7101.cbl");
+		MiningOperations.assignTaxonomyToModule("Create Invoices", new String[]{"BusinessProcess", "MMRS7101.cbl"});
+    }
+	
+	/**
+	 * Open your browser and enter the URL of the mining web UI. If necessary login with user "admin" and password "Worx2000".
+	 * 
+	 * The client selection page is displayed.
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	@Test
+	public void step16() throws GeneralLeanFtException {
+		minimizeEclipse();
+		BrowserOperations.logInIfLoggedOut(miningServerURL);	
+	}
+	
+	/**
+	 * Select the Client "Demo Client 1" and then the project "Demo Project A".
+	 * In the upper left corner click on Annotations.
+	 * 
+	 * The annotation page of Demo Project A opens.
+	 * 
+	 * Gear icon exists on the page
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	@Test
+	public void step17() throws GeneralLeanFtException {
+		browser = waitUntilPageExistsInBrowser("Clients", 5);
+		miningPage = BrowserOperations.getMiningPage(browser);
+		miningPage.ClientsPage().DemoClient1Card().click();
+		miningPage.ProjectsPage().DemoProjectACard().click();
+		miningPage.AnnotationsEntry().click();
+		assertAndVerify(true, miningPage.ResultsNum().exists());
+		assertAndVerify(true, BrowserOperations.lookIfWebTableEntryExists("Rule with category A"));
+		assertAndVerify(true, BrowserOperations.lookIfWebTableEntryExists("Database with category B"));
+		assertAndVerify(true, miningPage.ModulesPage().GearIcon().exists());
+	}
+
+	/**
+	 * Click on the Annotation Type Filter and select Rule.
+	 * 
+	 * All annotations defined with type Rule are filtered out.
+	 * 
+	 * @throws GeneralLeanFtException
+	 * @throws CloneNotSupportedException
+	 */
+	@Test
+	public void step18() throws GeneralLeanFtException, CloneNotSupportedException {
+		setFilterValue(new String[]{"RULE"}, "Annotation Type", "filter-icon--selected");
+		waitUntilActionFinished(5);
+		BrowserOperations.checkIfTableFiltersAreApplied(new int[] {2}, "RULE");
+	}
+	
+	/**
+	 * Click on the Annotation Type Filter, un-check Rule and select Database.
+	 * 
+	 * All annotations defined with type Database are filtered out.
+	 * 
+	 * @throws GeneralLeanFtException
+	 * @throws CloneNotSupportedException
+	 */
+	@Test
+	public void step19() throws GeneralLeanFtException, CloneNotSupportedException {
+		setFilterValue(new String[]{"RULE", "DATABASE"}, "Annotation Type", "filter-icon--selected"); // This will un-check Rule and then select Database, since Rule is already selected in step19
+		waitUntilActionFinished(5);
+		BrowserOperations.checkIfTableFiltersAreApplied(new int[] {2}, "DATABASE");		
+		setFilterValue(new String[]{"Reset"}, "Annotation Type", "filter-icon--not-selected");
+		assertAndVerify(true, BrowserOperations.lookIfWebTableEntryExists("RULE"));
+	}
+	
+	/**
+	 * Click on the Category Filter and select Business Rule.
+	 * 
+	 * All annotations defined with type Business Rule are filtered out.
+	 * 
+	 * @throws GeneralLeanFtException
+	 * @throws CloneNotSupportedException
+	 */
+	@Test
+	public void step20() throws GeneralLeanFtException, CloneNotSupportedException {
+		setFilterValue(new String[]{"Business Rule"}, "Category", "filter-icon--selected");
+		waitUntilActionFinished(5);	
+		BrowserOperations.checkIfTableFiltersAreApplied(new int[] {3}, "Business Rule");
+	}
+	
+	/**
+	 * Click on the Category Filter and select Rule.
+	 * 
+	 * All annotations listed are of type Rule, category Business Rule, State Candidate and Description Business Rule Candidate.
+	 * 
+	 * @throws GeneralLeanFtException
+	 * @throws CloneNotSupportedException
+	 */
+	@Test
+	public void step21() throws GeneralLeanFtException, CloneNotSupportedException {
+		setFilterValue(new String[]{"RULE"}, "Annotation Type", "filter-icon--selected");
+		BrowserOperations.checkIfTableFiltersAreApplied(new int[] {2}, "RULE");
+		BrowserOperations.checkIfTableFiltersAreApplied(new int[] {3}, "Business Rule");
+		BrowserOperations.checkIfTableFiltersAreApplied(new int[] {5}, "CANDIDATE");
+		BrowserOperations.checkIfTableFiltersAreApplied(new int[] {6}, "Business Rule Candidate [System identified]");
+		setFilterValue(new String[]{"Reset"}, "Annotation Type", "filter-icon--not-selected");
+	}
+	
+	/**
+	 * Click on the Annotation Metadata Filter and select LOOP_CONDITION.
+	 * 
+	 * There is one annotation listed for the file MMRS71Z1.
+	 * 
+	 * @throws CloneNotSupportedException 
+	 * @throws GeneralLeanFtException 
+	 */
+	@Test
+	public void step22() throws GeneralLeanFtException, CloneNotSupportedException {
+		WebElement annotationTypeWebElement = miningPage.describe(WebElement.class, new WebElementDescription.Builder()
+				.innerText(new RegExpProperty("Annotation Metadata"))
+				.tagName("TH").build());
+		annotationTypeWebElement.findChildren(WebElement.class, new WebElementDescription.Builder()
+				.className(new RegExpProperty(".*type-based-filter.*"))
+				.index(0)
+				.tagName("I").build())[0]
+				.click();
+		miningPage.AnnotationUIPage().LoopCondition().click();
+		miningPage.AnnotationUIPage().OKButton().click();
+		waitUntilActionFinished(2);
+		assertAndVerify(true, BrowserOperations.lookIfWebTableEntryExists("MMRS71Z1"));
+		assertAndVerify(false, BrowserOperations.lookIfWebTableEntryExists("MMRS7101"));
+	}
+	
+	/**
+	 * Click on the Annotation Metadata Filter, uncheck LOOP_CONDITION and click OK.
+	 * 
+	 * The filter is not applied any more.
+	 * 
+	 * @throws CloneNotSupportedException 
+	 * @throws GeneralLeanFtException 
+	 */
+	@Test
+	public void step23() throws GeneralLeanFtException, CloneNotSupportedException {
+		WebElement annotationTypeWebElement = miningPage.describe(WebElement.class, new WebElementDescription.Builder()
+				.innerText(new RegExpProperty("Annotation Metadata"))
+				.tagName("TH").build());
+		annotationTypeWebElement.findChildren(WebElement.class, new WebElementDescription.Builder()
+				.className(new RegExpProperty(".*type-based-filter.*"))
+				.index(0)
+				.tagName("I").build())[0]
+				.click();
+		miningPage.AnnotationUIPage().LoopCondition().click();
+		miningPage.AnnotationUIPage().OKButton().click();
+		waitUntilActionFinished(2);
+		assertAndVerify(true, BrowserOperations.lookIfWebTableEntryExists("MMRS71Z1"));
+		assertAndVerify(true, BrowserOperations.lookIfWebTableEntryExists("MMRS7101"));
+	}
+	
+	/**
+	 * Click on Gear icon.
+	 * 
+	 * Tooltip displayed with different check boxes as columns and search field to search for columns.
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	@Test
+	public void step24() throws GeneralLeanFtException {
+		miningPage.ModulesPage().GearIcon().click();
+		waitUntilActionFinished(3);
+		assertAndVerify(true, miningPage.ModulesPage().Search().exists());
+	}
+	
+	/**
+	 * Uncheck Annotation Type and Category checkboxes and click outside of tooltip.
+	 * 
+	 * Annotation Type and Category columns were deleted from the annotation table.
+	 * 
+	 * @throws GeneralLeanFtException
+	 * @throws CloneNotSupportedException 
+	 */
+	@Test
+	public void step25() throws GeneralLeanFtException, CloneNotSupportedException {
+		BrowserOperations.setCheckBoxValueInCustomizableTable("Annotation Type");
+		BrowserOperations.setCheckBoxValueInCustomizableTable("Category");
+		miningPage.ResultsNum().click(); // Click on any static text on screen to hide the tooltip
+		waitUntilActionFinished(2);
+		assertAndVerify(false, BrowserOperations.lookIfWebTableColumnExists("Annotation Type "));
+		assertAndVerify(false, BrowserOperations.lookIfWebTableColumnExists("Category "));
+	}
+	
+	/**
+	 * Click on Gear icon. Check the "Base Data" and click outside of tooltip.
+	 * 
+	 * The below columns were added to the annotation table.
+	 *  Annotation Type
+	 *  Category
+	 *  Path
+	 *  Technology
+	 *  Type
+	 *  
+	 * @throws GeneralLeanFtException
+	 * @throws CloneNotSupportedException 
+	 */
+	@Test
+	public void step26() throws GeneralLeanFtException, CloneNotSupportedException {
+		miningPage.ModulesPage().GearIcon().click();
+		BrowserOperations.setCheckBoxValueInCustomizableTable("Base Data");
+		miningPage.ResultsNum().click(); // Click on any static text on screen to hide the tooltip
+		waitUntilActionFinished(2);
+		assertAndVerify(true, BrowserOperations.lookIfWebTableColumnExists("Annotation Type "));	
+		assertAndVerify(true, BrowserOperations.lookIfWebTableColumnExists("Category "));	
+		assertAndVerify(true, BrowserOperations.lookIfWebTableColumnExists("Path "));	
+		assertAndVerify(true, BrowserOperations.lookIfWebTableColumnExists("Technology "));
+		assertAndVerify(true, BrowserOperations.lookIfWebTableColumnExists("Type "));
+	}
+	
+	/**
+	 * Click on Gear icon.Uncheck the "Path" checkbox.
+	 * 
+	 * The "Base Data" checkbox is turned to indeterminate state.
+	 * 
+	 * @throws GeneralLeanFtException
+	 * @throws CloneNotSupportedException 
+	 */
+	@Test
+	public void step27() throws GeneralLeanFtException, CloneNotSupportedException {
+		miningPage.ModulesPage().GearIcon().click();
+		BrowserOperations.setCheckBoxValueInCustomizableTable("Path");
+		assertAndVerify(true, getCheckBoxClassName("Base Data").contains("indeterminate"));
+	}
+	
+	/**
+	 * Click on search field and enter "Type"
+	 * 
+	 * The "Type" column is highlighted
+	 * 
+	 * @throws CloneNotSupportedException 
+	 * @throws GeneralLeanFtExceptions
+	 */
+	@Test
+	public void step28() throws GeneralLeanFtException, CloneNotSupportedException {
+		miningPage.ModulesPage().Search().setValue("Type");
+		waitUntilActionFinished(2);
+		assertAndVerify(2, miningPage.findChildren(WebElement.class, new WebElementDescription.Builder()
+				.innerText("Type")
+				.className("font-highlight")
+				.tagName("SPAN").build()).length);
+	}
+	
+	/**
+	 * Clear the text in the search field then click outside of tooltip. Click on "csv" button.
+	 * 
+	 * A .csv file named annotations_<timestamp>.csv is downloaded and verify the first row of the file had same order of columns in the annotation table and 
+	 * verify file contains same number of lines is equal to results.
+	 * 
+	 * @throws CloneNotSupportedException 
+	 * @throws FileNotFoundException 
+	 * @throws GeneralLeanFtExceptions
+	 */
+	@Test
+	public void step29() throws GeneralLeanFtException, FileNotFoundException, CloneNotSupportedException {
+		miningPage.ModulesPage().Search().setValue("");
+		waitUntilActionFinished(1);
+		miningPage.ResultsNum().click(); // Click on any static text on screen to hide the tooltip
+		miningPage.ModulesPage().CSVExportBrowseModules().click();
+		waitUntilActionFinished(10);
+		String filePath = getLatestFilefromDir(DEFAULT_DOWNLOADS_DIR, CURRENT_DOWNLOADS_DIR);
+		String filename = filePath.substring(filePath.indexOf("annotations_"));
+		assertAndVerify(true, filename.contains(".csv"));
+		BrowserOperations.checkColumnsInCSVWithTableData("Annotations", filePath);
+		assertAndVerify((int)(readFileAsList(filePath).stream().filter(line -> line.contains("\"\n")).count() - 1), Integer.valueOf(miningPage.ResultsNum().getInnerText().split("Results:")[1].trim()));
+	}
+
+	/**
+	 * Click on Gear icon. Uncheck "Base Data" and click outside of tooltip. Click on "csv" button.
+	 * 
+	 * A .csv file named annotations_<timestamp>.csv is downloaded and verify the first row of the file had same order of columns in the annotation table and 
+	 * verify file contains same number of lines is equal to results.
+	 * 
+	 * @throws GeneralLeanFtException
+	 * @throws CloneNotSupportedException 
+	 * @throws FileNotFoundException 
+	 */
+	@Test
+	public void step30() throws GeneralLeanFtException, CloneNotSupportedException, FileNotFoundException {
+		miningPage.ModulesPage().GearIcon().click();
+		BrowserOperations.setCheckBoxValueInCustomizableTable("Base Data");
+		miningPage.ResultsNum().click(); // Click on any static text on screen to hide the tooltip
+		miningPage.ModulesPage().CSVExportBrowseModules().click();
+		waitUntilActionFinished(10);
+		String filePath = getLatestFilefromDir(DEFAULT_DOWNLOADS_DIR, CURRENT_DOWNLOADS_DIR);
+		String filename = filePath.substring(filePath.indexOf("annotations"));
+		assertAndVerify(true, filename.contains(".csv"));
+		BrowserOperations.checkColumnsInCSVWithTableData("Annotations", filePath);
+		assertAndVerify((int)(readFileAsList(filePath).stream().filter(line -> line.contains("\"\n")).count() - 1), Integer.valueOf(miningPage.ResultsNum().getInnerText().split("Results:")[1].trim()));
+	}
+	
+	/**
+	 * Click on Gear icon. Check "Created By" and click outside of tooltip. Click on "csv" button.
+	 * 
+	 * A .csv file named annotations_<timestamp>.csv is downloaded and verify the first row of the file had same order of columns in the annotation table.
+	 *  Order of columns:
+	 *  Module Name
+	 *  Source Code
+	 *  Annotation Type
+	 *  Category
+	 *  Path
+	 *  State
+	 *  Technology
+	 *  Type
+	 *  Annotation Description
+	 *  Created By
+	 *  Modified By
+	 * Verify file contains same number of lines is equal to results.
+	 * 
+	 * @throws GeneralLeanFtException
+	 * @throws CloneNotSupportedException 
+	 * @throws FileNotFoundException 
+	 */
+	@Test
+	public void step31() throws GeneralLeanFtException, CloneNotSupportedException, FileNotFoundException {
+		miningPage.ModulesPage().GearIcon().click();
+		BrowserOperations.setCheckBoxValueInCustomizableTable("Created By"); 
+		waitUntilActionFinished(5);
+		miningPage.ResultsNum().click(); // Click on any static text on screen to hide the tooltip
+		waitUntilActionFinished(30);
+		miningPage.ModulesPage().CSVExportBrowseModules().click();
+		waitUntilActionFinished(20);
+		String filePath = getLatestFilefromDir(DEFAULT_DOWNLOADS_DIR, CURRENT_DOWNLOADS_DIR);
+		String filename = filePath.substring(filePath.indexOf("annotations"));
+		assertAndVerify(true, filename.contains(".csv"));
+		BrowserOperations.checkColumnsInCSVWithTableData("Annotations", filePath);
+		assertAndVerify((int)(readFileAsList(filePath).stream().filter(line -> line.contains("\"\n")).count() - 1), Integer.valueOf(miningPage.ResultsNum().getInnerText().split("Results:")[1].trim()));
+	}
+	
+	/**
+	 * Click on Annotations on the left hand side. Click on "csv" button.
+	 * 
+	 * A .csv file named annotations_<timestamp>.csv is downloaded and verify the first row of the file had same order of columns in the annotation table.
+	 *  Order of columns:
+	 *  Module Name
+	 *  Technology
+	 *  Type
+	 *  Last scan
+	 * Verify file contains same number of lines is equal to results.
+	 * 
+	 * @throws GeneralLeanFtException
+	 * @throws CloneNotSupportedException 
+	 * @throws FileNotFoundException 
+	 */
+	@Test
+	public void step32() throws GeneralLeanFtException, FileNotFoundException, CloneNotSupportedException {
+		miningPage.AnnotationsEntry().click();
+		waitUntilActionFinished(3);
+		miningPage.ModulesPage().CSVExportBrowseModules().click();
+		waitUntilActionFinished(10);
+		String filePath = getLatestFilefromDir(DEFAULT_DOWNLOADS_DIR, CURRENT_DOWNLOADS_DIR);
+		String filename = filePath.substring(filePath.indexOf("annotations"));
+		assertAndVerify(true, filename.contains(".csv"));
+		BrowserOperations.checkColumnsInCSVWithTableData("Annotations", filePath);
+		assertAndVerify((int)(readFileAsList(filePath).stream().filter(line -> line.contains("\"\n")).count() - 1), Integer.valueOf(miningPage.ResultsNum().getInnerText().split("Results:")[1].trim()));
+	}
+	
+	/*Step 33 to 36 Not implemented as covered in separate job/test */
+	
+	/**
+	 * Switch back to eclipse. Open the file MMRS7102.cbl (discovery-jumpstart > src > cobol > programs > MMRS7102.cbl).
+	 * 
+	 * The file is opened in the cobol source editor.
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	@Test
+	public void step37() throws GeneralLeanFtException {
+		mainWindow.maximize();
+		waitUntilActionFinished(3);
+		projectExplorerTreeView.activateNode(projectExplorerTreeView.buildNodePath(0, "src", "cobol", "programs", "MMRS7102.cbl"));
+		waitUntilActionFinished(2);
+		assertAndVerify("MMRS7102.cbl", mainWindow.EditorTabControl().getSelectedTab());
+	}
+	
+	/**
+	 * Select the following code in the editor (lines 14 and 17), click right, and select mining < Create New Annotation:
+	 *  INPUT-OUTPUT SECTION.
+	 *  FILE-CONTROL.
+	 *  DATA DIVISION.
+	 *  FILE SECTION.
+	 *  
+	 * The Annotation Editor view opens at the bottom.
+	 *  
+	 * @throws GeneralLeanFtException
+	 */
+	@Test
+	public void step38() throws GeneralLeanFtException {
+		mainWindow.StyledTextEditor().select(13, 0, 16, 21);
+		mainWindow.StyledTextEditor().click(MouseButton.RIGHT);
+		mainWindow.StyledTextEditor().MiningMenu().AnnotationMenu().select();
+		waitUntilActionFinished(5);
+		assertAndVerify("Annotation Editor", mainWindow.BottomTabControl().getSelectedTab());
+	}
+	
+	/**
+	 * Select the type Rule, the Annotation Category A, insert "Custom Annotation1" as description, insert "rule1" and "rule2" in the text field of tag "Annotation Rules" and insert "red", "blue" in the "Annotation Rules".
+	 * Click on "Save".
+	 * 
+	 * A new annotation created.
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	@Test
+	public void step39() throws GeneralLeanFtException {
+		mainWindow.BottomTabControl().click();
+		mainWindow.BottomTabControl().BottomTabToolbar().getButton("Maximize").press();
+		pressTabKey();
+		pressEnter();
+		
+		pressKeyMultipleTimes(KeyEvent.VK_DOWN, 3);
+		waitUntilActionFinished(2);
+		pressEnter();
+		
+		pressTabKey();
+		pressKeyMultipleTimesWithPauses(KeyEvent.VK_ENTER, 2, 1);
+		waitUntilActionFinished(2);
+		
+		pressTabKey();
+		putTextToClipboard("Custom Annotation1");
+		pressCtrlAndV();
+		waitUntilActionFinished(2);
+		
+		pressTabKey();
+		putTextToClipboard("red");
+		pressCtrlAndV();
+		pressEnter();
+		putTextToClipboard("blue");
+		pressCtrlAndV();
+		pressEnter();
+		waitUntilActionFinished(2);
+		
+		pressTabKey();
+		putTextToClipboard("rule1");
+		pressCtrlAndV();
+		pressEnter();
+		waitUntilActionFinished(2);
+		putTextToClipboard("rule2");
+		pressCtrlAndV();
+		pressEnter();
+		waitUntilActionFinished(2);
+		pressKeyMultipleTimesWithPauses(KeyEvent.VK_TAB, 3, 1);
+		waitUntilActionFinished(2);
+		pressEnter();
+		waitUntilActionFinished(2);
+		mainWindow.BottomTabControl().BottomTabToolbar().getButton("Restore").press();
+	}
+	
+	/**
+	 * Open the file MMRS7111.cbl (discovery-jumpstart > src > cobol > programs > MMRS7111.cbl).
+	 * 
+	 * The file is opened in the cobol source editor.
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	@Test
+	public void step40() throws GeneralLeanFtException {
+		projectExplorerTreeView.activateNode(projectExplorerTreeView.buildNodePath(0, "src", "cobol", "programs", "MMRS7111.cbl"));
+		waitUntilActionFinished(2);
+		assertAndVerify("MMRS7111.cbl", mainWindow.EditorTabControl().getSelectedTab());
+	}
+	
+	/**
+	 * Select the following code in the editor (lines 8 and 12), click right, and select mining < Create New Annotation:
+	 *  IDENTIFICATION DIVISION
+	 *  PROGRAM-ID.    MMRS7111.
+	 *  *************************************************************
+	 *  ENVIRONMENT DIVISION.
+	 *  CONFIGURATION SECTION.
+	 *  
+	 * The Annotation Editor view opens at the bottom.
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	@Test
+	public void step41() throws GeneralLeanFtException {
+		mainWindow.StyledTextEditor().select(7, 0, 11, 30);
+		mainWindow.StyledTextEditor().click(MouseButton.RIGHT);
+		mainWindow.StyledTextEditor().MiningMenu().AnnotationMenu().select();
+		waitUntilActionFinished(5);
+		assertAndVerify("Annotation Editor", mainWindow.BottomTabControl().getSelectedTab());
+	}
+	
+	/**
+	 * Select the type Database, the Annotation Category B, insert "Custom Annotation2" as description, insert "rule3" in the text field of tag "Annotation Rules" and insert "green" in the "Annotation Rules".
+	 * Click on "Save".
+	 * 
+	 * A new annotation created.
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	@Test
+	public void step42() throws GeneralLeanFtException {
+		mainWindow.BottomTabControl().click();
+		pressCtrlAndM();
+		pressTabKey();
+		pressKeyMultipleTimesWithPauses(KeyEvent.VK_ENTER, 2, 1);
+		
+		pressTabKey();
+		pressEnter();
+		pressDownArrowKey();
+		pressEnter();
+		waitUntilActionFinished(2);
+		
+		pressTabKey();
+		putTextToClipboard("Custom Annotation2");
+		pressCtrlAndV();
+		waitUntilActionFinished(2);
+
+		pressTabKey();
+		putTextToClipboard("green");
+		pressCtrlAndV();
+		pressEnter();
+		waitUntilActionFinished(2);
+		
+		pressTabKey();
+		putTextToClipboard("rule3");
+		pressCtrlAndV();
+		pressEnter();
+		waitUntilActionFinished(2);
+		pressKeyMultipleTimesWithPauses(KeyEvent.VK_TAB, 3, 1);
+		waitUntilActionFinished(2);
+		pressEnter();
+		waitUntilActionFinished(2);
+		pressCtrlAndM();
+	}
+	
+	/**
+	 * Switch back to web UI. Click on Dashboard and click on the Annotation menu to reset the Annotation table.
+	 * Click on the gear icon and check the custom properties box.
+	 * 
+	 * Both Annotation Colors and Annotation Rules columns were added to the annotation table.
+	 * 
+	 * @throws GeneralLeanFtException
+	 * @throws CloneNotSupportedException 
+	 */
+	@Test
+	public void step43() throws GeneralLeanFtException, CloneNotSupportedException {
+		mainWindow.minimize();
+		waitUntilActionFinished(2);
+		miningPage.DashboardLink().click();
+		waitUntilActionFinished(3);
+		miningPage.AnnotationsEntry().click();
+		waitUntilActionFinished(5);
+		miningPage.ModulesPage().GearIcon().click();
+		miningPage.ModulesPage().Search().setValue("Custom Properties");
+		waitUntilActionFinished(2);
+		BrowserOperations.setCheckBoxValueInCustomizableTable("Custom Properties");
+		waitUntilActionFinished(3);
+		miningPage.Annotations().click();
+		waitUntilActionFinished(5);
+	}
+	
+	/**
+	 * Click on the filter icon of the "Annotation Colors" column and check the "blue" color and click on OK.
+	 * 
+	 * Only one result should appear with Module name = "MMRS7102" and Annotation Description = "Custom Annotation1".
+	 * 
+	 * @throws GeneralLeanFtException
+	 * @throws CloneNotSupportedException 
+	 */
+	@Test
+	public void step44() throws GeneralLeanFtException, CloneNotSupportedException {
+		setFilterValue(new String[]{"blue"}, "Annotation Colors ", "filter-icon--selected");
+		assertAndVerify(1, Integer.valueOf(miningPage.ResultsNum().getInnerText().trim().split("Results: ")[1]));
+		Table table = browser.describe(Table.class, new TableDescription.Builder().tagName("TABLE").index(1).build());
+		List<TableRow> rows = table.getRows();
+	    assertAndVerifyContains(rows.get(1).getCells().get(0).getText().trim(), "MMRS7102");
+		assertAndVerifyContains(rows.get(1).getCells().get(8).getText().trim(), "Custom Annotation1");
+	}
+	
+	/**
+	 * Click on the filter icon of the "Annotation Rules" column and check the "rule3" and click on OK.
+	 * 
+	 * Results should be zero.
+	 * 
+	 * @throws GeneralLeanFtException
+	 * @throws CloneNotSupportedException 
+	 */
+	@Test
+	public void step45() throws GeneralLeanFtException, CloneNotSupportedException {
+		setFilterValue(new String[]{"rule3"}, "Annotation Rules ", "filter-icon--selected");
+		assertAndVerify(0, Integer.valueOf(miningPage.ResultsNum().getInnerText().trim().split("Results: ")[1]));
+	}
+	
+	/**
+	 * Click on the filter icon of the "Annotation Colors" column and uncheck the "blue" color and check the "green" color click on OK.
+	 * 
+	 * Only one result should appear with Module name = "MMRS7111" and Annotation Description = "Custom Annotation2".
+	 * Reset the filter in Annotation Colors and Annotation Rules.
+	 * 
+	 * @throws GeneralLeanFtException
+	 * @throws CloneNotSupportedException 
+	 */
+	@Test
+	public void step46() throws GeneralLeanFtException, CloneNotSupportedException {
+		setFilterValue(new String[]{"blue", "green"}, "Annotation Colors", "filter-icon--selected"); 
+		assertAndVerify(1, Integer.valueOf(miningPage.ResultsNum().getInnerText().trim().split("Results: ")[1]));
+		Table table = browser.describe(Table.class, new TableDescription.Builder().tagName("TABLE").index(1).build());
+		List<TableRow> rows = table.getRows();
+	    assertAndVerifyContains(rows.get(1).getCells().get(0).getText().trim(), "MMRS7111");
+		assertAndVerifyContains(rows.get(1).getCells().get(8).getText().trim(), "Custom Annotation2");
+		setFilterValue(new String[]{"Reset"}, "Annotation Colors", "filter-icon--not-selected");
+		setFilterValue(new String[]{"Reset"}, "Annotation Rules", "filter-icon--not-selected");
+	}
+	
+	/**
+	 * Click on Gear icon. Check Business Taxonomies and click outside of tooltip.
+	 * In the table header, click the filter icon in the table column "BusinessProcess" and select "Create Invoices". Click on OK.
+	 * 
+	 * All modules with the taxonomy "Create Invoices" is filtered out.
+	 * 
+	 * @throws GeneralLeanFtException
+	 * @throws CloneNotSupportedException 
+	 */
+	@Test
+	public void step47() throws GeneralLeanFtException, CloneNotSupportedException {
+		miningPage.ModulesPage().GearIcon().click();
+		BrowserOperations.setCheckBoxValueInCustomizableTable("Business Taxonomies");	
+		miningPage.ResultsNum().click(); // Click on any static text on screen to hide the tooltip
+		setFilterValue(new String[]{"Create Invoices"}, "BusinessProcess", "filter-icon--selected");
+		waitUntilActionFinished(5);
+		BrowserOperations.checkIfTableFiltersAreApplied(new int[] {6}, "Create Invoices");
+	}
+	
+	@Test
+	public void stepTest() throws GeneralLeanFtException {
+		
+	}
+	
+	/**
+	 * Finds the checkbox containing the text @param innerText
+	 * @return className of the element which contains status of the checkbox.
+	 * 
+	 * @throws GeneralLeanFtException
+	 * @throws CloneNotSupportedException
+	 */
+	private String getCheckBoxClassName(String innerText) throws GeneralLeanFtException, CloneNotSupportedException {
+		return miningPage.describe(WebElement.class,
+				new WebElementDescription.Builder().innerText(innerText).tagName("NZ-TREE-NODE").build())
+				.findChildren(WebElement.class,
+				new WebElementDescription.Builder().tagName("NZ-TREE-NODE-CHECKBOX").build())[0]
+						.getAttribute("class");
+	}
+	
+	/**
+	 * This method will set the filterValue @param values of the column @param columnName
+	 * @param iconValidationText
+	 * 
+	 * @throws GeneralLeanFtException
+	 * @throws CloneNotSupportedException
+	 */
+	private static void setFilterValue(String[] values, String columnName, String iconValidationText) throws GeneralLeanFtException, CloneNotSupportedException {
+		WebElement annotationTypeWebElement = miningPage.describe(WebElement.class, new WebElementDescription.Builder()
+				.innerText(new RegExpProperty(".*" + columnName + ".*"))
+				.tagName("TH").build());
+		WebElement filter = annotationTypeWebElement.findChildren(WebElement.class, new WebElementDescription.Builder()
+				.className(new RegExpProperty(".*type-based-filter.*"))
+				.index(0)
+				.tagName("I").build())[0];
+		filter.click();
+		if (values[0].equals("Reset")) {
+			miningPage.ModulesPage().ResetLink().click();
+		} else {
+			for (String value : values) {
+				miningPage.describe(WebElement.class, new WebElementDescription.Builder()
+						.innerText(new RegExpProperty(".*" + value + ".*"))
+						.tagName("LI").build()).click();
+			}
+		}
+		if (! columnName.isEmpty()) {
+			assertAndVerifyContains(filter.getClassName(), iconValidationText);
+		}
+		if (! values[0].equals("Reset")) {
+			miningPage.OKButton().click();
+		}
+		waitUntilTestObjectDoesNotExist(miningPage.CancelButton());
+	}
+}

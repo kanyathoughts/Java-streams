@@ -1,0 +1,19 @@
+package Sample;
+
+import java.util.ArrayList;
+
+public class Demo1 {
+	
+	public static void main(String[] args) {
+		ArrayList<Integer> numberList = new ArrayList<>();
+		numberList.add(10);
+		numberList.add(15);
+		numberList.add(20);
+		numberList.add(25);
+		numberList.add(30);
+		
+		System.out.println(numberList);
+		
+	}
+
+}

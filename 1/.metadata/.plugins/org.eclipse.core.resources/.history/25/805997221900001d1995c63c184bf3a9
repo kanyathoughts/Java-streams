@@ -1,0 +1,26 @@
+package testcases.mining.webui;
+
+import unittesting.AppModLeanftFramework;
+
+public class JavaClass extends AppModLeanftFramework{
+
+	public static void main(String[] args) {
+		AppModLeanftFramework o1 = new AppModLeanftFramework();
+		
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	protected String getClassName() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	protected String getTestName() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+}

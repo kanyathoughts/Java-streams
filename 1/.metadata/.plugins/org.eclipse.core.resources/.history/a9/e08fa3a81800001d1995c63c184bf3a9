@@ -1,0 +1,2109 @@
+package unittesting;
+
+import java.awt.AWTException;
+import java.awt.Graphics2D;
+import java.awt.MouseInfo;
+import java.awt.Point;
+import java.awt.PointerInfo;
+import java.awt.Rectangle;
+import java.awt.Robot;
+import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.StringSelection;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBuffer;
+import java.awt.image.RenderedImage;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
+
+import javax.imageio.ImageIO;
+
+import org.apache.commons.io.FileUtils;
+import org.hamcrest.CoreMatchers;
+import org.junit.Assert;
+import org.sikuli.script.FindFailed;
+import org.sikuli.script.Screen;
+
+import com.hp.lft.report.ModifiableReportConfiguration;
+import com.hp.lft.report.ReportException;
+import com.hp.lft.report.ReportLevel;
+import com.hp.lft.report.Reporter;
+import com.hp.lft.report.Status;
+import com.hp.lft.sdk.CheckedState;
+import com.hp.lft.sdk.ClickArgs;
+import com.hp.lft.sdk.GeneralLeanFtException;
+import com.hp.lft.sdk.Keyboard;
+import com.hp.lft.sdk.Keyboard.Keys;
+import com.hp.lft.sdk.Location;
+import com.hp.lft.sdk.MouseButton;
+import com.hp.lft.sdk.Position;
+import com.hp.lft.sdk.RegExpProperty;
+import com.hp.lft.sdk.ReplayArgumentOutOfRangeException;
+import com.hp.lft.sdk.ReplayItemNotFoundException;
+import com.hp.lft.sdk.ReplayObjectNotFoundException;
+import com.hp.lft.sdk.TestObject;
+import com.hp.lft.sdk.WaitUntilTestObjectState;
+import com.hp.lft.sdk.WaitUntilTestObjectState.WaitUntilEvaluator;
+import com.hp.lft.sdk.java.Editor;
+import com.hp.lft.sdk.java.TabControl;
+import com.hp.lft.sdk.java.Table;
+import com.hp.lft.sdk.java.TableCell;
+import com.hp.lft.sdk.java.TableRow;
+import com.hp.lft.sdk.java.TreeView;
+import com.hp.lft.sdk.java.TreeViewNode;
+import com.hp.lft.sdk.web.Browser;
+import com.hp.lft.sdk.web.BrowserDescription;
+import com.hp.lft.sdk.web.BrowserFactory;
+import com.hp.lft.unittesting.UnitTestBase;
+import com.hp.lft.verifications.Verify;
+
+import appmodels.CobolClipseApplicationModel;
+import appmodels.GeneralEclipseApplicationModel;
+import appmodels.GeneralEclipseApplicationModel.mainWindow.ImportWindow.SelectScreen.SelectAnImportWizardTreeView;
+import appmodels.MeeclipseApplicationModel;
+import appmodels.MeeclipseApplicationModel.MainWindow;
+import appmodels.MeeclipseApplicationModel.MainWindow.PackageExplorerTabControl.PackageExplorerTreeView;
+import appmodels.MiningApplicationModel;
+import appmodels.MiningApplicationModel.MainWindow.ProjectExplorerTabControl.ProjectExplorerTreeView;
+import appmodels.NatclipseApplicationModel;
+import appmodels.NatclipseApplicationModel.JavaTreeViewNodeBase;
+
+/**
+ * Abstract class AppModLeanftFramework provides reusable methods that can be
+ * used in all test cases extending this class
+ */
+public abstract class AppModLeanftFramework extends UnitTestBase {
+
+	private static final String VIEW_MENU = "View Menu";
+	/** A factor that can be changed to increase the waiting time */
+	private static final int WAITING_FACTOR = 1;
+
+	/**
+	 * Add to data dictionary
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	public static void addtoDataDictionary() throws GeneralLeanFtException {
+		Keyboard.keyDown(Keyboard.Keys.ALT);
+		Keyboard.keyDown(Keyboard.Keys.SHIFT);
+		Keyboard.pressKey(Keyboard.Keys.M);
+		Keyboard.keyUp(Keyboard.Keys.ALT);
+		Keyboard.keyUp(Keyboard.Keys.SHIFT);
+		Keyboard.pressKey(Keyboard.Keys.E);
+	}
+	
+	public abstract void display(String name);
+
+	/**
+	 * Checks if the actual boolean matches the expected boolean and record the
+	 * result with junit and leanft verify.
+	 * 
+	 * @param expectedResult The expected boolean
+	 * @param actualResult   The actual boolean
+	 */
+	public static void assertAndVerify(boolean expectedResult, boolean actualResult) {
+		Verify.areEqual(expectedResult, actualResult);
+		Assert.assertEquals(expectedResult, actualResult);
+	}
+
+	/**
+	 * Checks if the actual int matches the expected int and record the result with
+	 * junit and leanft verify.
+	 * 
+	 * @param expectedResult The expected int
+	 * @param actualResult   The actual int
+	 */
+	public static void assertAndVerify(int expectedResult, int actualResult) {
+		Verify.areEqual(expectedResult, actualResult);
+		Assert.assertEquals(expectedResult, actualResult);
+	}
+
+	/**
+	 * Checks if the actual string matches the expected string and record the result
+	 * with junit and leanft verify. If the assert fails a message is printed.
+	 * 
+	 * @param message        The message that will be printed if the assertion fails
+	 * @param expectedResult The expected string
+	 * @param actualResult   The actual string
+	 */
+	public static void assertAndVerify(String message, boolean expectedResult, boolean actualResult) {
+		Verify.areEqual(expectedResult, actualResult, message);
+		Assert.assertEquals(message, expectedResult, actualResult);
+	}
+
+	/**
+	 * Checks if the actual string matches the expected string and record the result
+	 * with junit and leanft verify.
+	 * 
+	 * @param expectedResult The expected string
+	 * @param actualResult   The actual string
+	 */
+	public static void assertAndVerify(String expectedResult, String actualResult) {
+		Verify.areEqual(expectedResult, actualResult);
+		Assert.assertEquals(expectedResult, actualResult);
+	}
+
+	/**
+	 * assertAndVerify method that check if a string is within another string
+	 * 
+	 * @param actualResult    The string being searched
+	 * @param stringToContain The string you are looking for
+	 */
+	public static void assertAndVerifyContains(String actualResult, String stringToContain) {
+		Verify.contains(stringToContain, actualResult);
+		Assert.assertThat(actualResult, CoreMatchers.containsString(stringToContain));
+	}
+
+	/**
+	 * assertAndVerify method that check if a string ends with another string
+	 * 
+	 * @param actualResult    The string being searched
+	 * @param stringToEndWith The string you are looking for
+	 */
+	public static void assertAndVerifyEndsWith(String actualResult, String stringToEndWith) {
+		Verify.endsWith(stringToEndWith, actualResult);
+		Assert.assertThat(actualResult, CoreMatchers.endsWith(stringToEndWith));
+	}
+
+	/**
+	 * assertAndVerify method that check if a string starts with another string
+	 * 
+	 * @param actualResult      The string being searched
+	 * @param stringToStartWith The string you are looking for
+	 */
+	public static void assertAndVerifyStartsWith(String actualResult, String stringToStartWith) {
+		Verify.startsWith(stringToStartWith, actualResult);
+		Assert.assertThat(actualResult, CoreMatchers.startsWith(stringToStartWith));
+	}
+
+	/**
+	 * Checks if the actualResult matches a regex and record the result with junit
+	 * and leanft verify.
+	 * 
+	 * @param actualResult The actual result that will be checked for a regex
+	 * @param regex        The regex string that will used to match a text
+	 */
+	public static void assertAndVerifyWithRegex(String actualResult, String regex) {
+		Verify.areEqual(true, actualResult.matches(regex), "the actual result is" + actualResult);
+		Assert.assertThat(actualResult, RegexMatcher.matches(regex));
+	}
+
+	/**
+	 * Checks the tab name for a pre-pended "*" character
+	 * 
+	 * @param tabName Name of the table
+	 * @return boolean True if the tab is dirty, false if not
+	 */
+	public static boolean checkForDirtyTab(String tabName) {
+		Matcher m = Pattern.compile("^\\*").matcher(tabName);
+		return m.find();
+	}
+
+	/**
+	 * Checks if a protected area is protected or not
+	 * 
+	 * @param editor          Editor window with a protected area
+	 * @param startLineNumber Line were the protected area start. This parameter is
+	 *                        1-indexed that means the line numbers in eclipse can
+	 *                        be directly used
+	 * @param endLineNumber   Line were the protected area ends. This parameter is
+	 *                        1-indexed but depending on the code the line numbers
+	 *                        sometimes don't match.
+	 * @return True if the file was not modified, False if the file was modified
+	 * @throws GeneralLeanFtException
+	 */
+	public static boolean checkProtectedArea(Editor editor, int startLineNumber, int endLineNumber)
+			throws GeneralLeanFtException {
+		expandCodeInEditor(editor);
+		String unmodifiedCode = editor.getText();
+		String textToTest = "test123456789";
+		editor.setCursorPosition(0, 0);
+		for (int i = 1; i < endLineNumber; i++) {
+			if (i >= startLineNumber) {
+				editor.sendKeys(textToTest);
+			}
+			pressDownArrowKey();
+		}
+		editor.sendKeys(textToTest);
+		return unmodifiedCode.contentEquals(editor.getText());
+	}
+
+	/**
+	 * Cleans all projects in the workspace of a natclipse test protocol Click on
+	 * "Project" -> "Clean..." Select Radio Button "Clean all projects", click "OK"
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	public static void cleanNatclipseProjects(NatclipseApplicationModel appModel) throws GeneralLeanFtException {
+		appModel.MainWindow().ProjectMenu().Clean().select();
+		appModel.MainWindow().cleanWindow().cleanAllProjectsRadioButton().set();
+		appModel.MainWindow().cleanWindow().cleanButton().click();
+	}
+
+	/**
+	 * Close the eclipse window
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	public static void closeEclipse() throws GeneralLeanFtException {
+		GeneralEclipseApplicationModel generalAppModel = new GeneralEclipseApplicationModel();
+		generalAppModel.mainWindow().close();
+		// generalAppModel.mainWindow().ConfirmExitWindow().ExitButton().click();
+		waitUntilActionFinished(2);
+	}
+
+	/**
+	 * Close the subclise window
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	public static void closeSubclipseWindow() throws GeneralLeanFtException {
+		GeneralEclipseApplicationModel generalAppModel = new GeneralEclipseApplicationModel();
+		waitUntilTestObjectExists(generalAppModel.mainWindow().subclipseUsageWindow());
+		generalAppModel.mainWindow().subclipseUsageWindow().reportUsageOfSubclipseToSubclipseTeamCheckBox()
+				.setState(CheckedState.UNCHECKED);
+		waitUntilActionFinished(2);
+		generalAppModel.mainWindow().subclipseUsageWindow().oKButton().click();
+	}
+
+	/**
+	 * Closes the window that appears for the subversionNativeLibrary, if it appears
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	public static void closeSubversionNativeLibraryWindow() throws GeneralLeanFtException {
+		GeneralEclipseApplicationModel generalAppModel = new GeneralEclipseApplicationModel();
+		while (generalAppModel.mainWindow().subversionNativeLibraryNA().exists()) {
+			generalAppModel.mainWindow().subversionNativeLibraryNA().oKButton().click();
+			waitUntilActionFinished(1);
+		}
+	}
+
+	/**
+	 * Collapse code in an editor with the shortcut CTRL + SHIFT + DIVIDE
+	 * 
+	 * @param editor The editor that contains the expanded code
+	 * @throws GeneralLeanFtException
+	 */
+	public static void collapseCodeInEditor(Editor editor) throws GeneralLeanFtException {
+		editor.setFocus();
+		pressKeys(KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT, KeyEvent.VK_DIVIDE);
+	}
+
+	/**
+	 * Compares two image files and returns true, if the over given value for the
+	 * allowed difference is higher than the actual difference
+	 * 
+	 * @param pathActual
+	 * @param pathExpected
+	 * @param allowedDifference in percent
+	 * @return
+	 */
+	public static boolean compareImages(String pathActual, String pathExpected, float allowedDifference) {
+		float similarity = 0;
+		File fileActual = new File(pathActual);
+		File fileExpected = new File(pathExpected);
+		try {
+			// take buffer data from both image files //
+			BufferedImage biActual = ImageIO.read(fileActual);
+			DataBuffer dbActual = biActual.getData().getDataBuffer();
+			int sizeActual = dbActual.getSize();
+			BufferedImage biExpected = ImageIO.read(fileExpected);
+			DataBuffer dbExpected = biExpected.getData().getDataBuffer();
+			int sizeExpected = dbExpected.getSize();
+			int count = 0;
+			// compare data-buffer objects //
+			if (sizeActual == sizeExpected) {
+				for (int i = 0; i < sizeActual; i++) {
+					if (dbActual.getElem(i) == dbExpected.getElem(i)) {
+						count = count + 1;
+					}
+				}
+				similarity = ((float) count * 100) / sizeActual;
+			} else {
+				System.out.println("Both the images are not of same size");
+			}
+		} catch (Exception e) {
+			System.out.println("Failed to compare image files ...");
+		}
+		System.out.println("difference in percent: " + (100 - similarity));
+		return (similarity > (100 - allowedDifference));
+	}
+
+	/**
+	 * Changes the text to lower case
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	public static void convertLowerCase() throws GeneralLeanFtException {
+		Keyboard.keyDown(Keyboard.Keys.CONTROL);
+		Keyboard.keyDown(Keyboard.Keys.SHIFT);
+		Keyboard.pressKey(Keyboard.Keys.U);
+		Keyboard.keyUp(Keyboard.Keys.CONTROL);
+		Keyboard.keyUp(Keyboard.Keys.SHIFT);
+	}
+
+	/**
+	 * Changes the text to uppper case
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	public static void convertUpperCase() throws GeneralLeanFtException {
+		Keyboard.keyDown(Keyboard.Keys.CONTROL);
+		Keyboard.pressKey(Keyboard.Keys.U);
+		Keyboard.keyUp(Keyboard.Keys.CONTROL);
+	}
+
+	/**
+	 * Makes all hidden files (starting with a dot) in the project explorer visible
+	 * by disabling the hidden resources filter
+	 * 
+	 * @param perspective
+	 */
+	public static void disableHiddenResourcesFilter(String perspective) throws GeneralLeanFtException {
+		appmodels.NatclipseApplicationModel.MainWindow mainWindow = new NatclipseApplicationModel().MainWindow();
+		if (perspective.contentEquals("Cobol")) {
+			new CobolClipseApplicationModel().MainWindow().ProjectExplorerTabControl().ProjectExplorerViewMenuToolbar()
+					.getButton(VIEW_MENU).press();
+		} else {
+			mainWindow.ProjectExplorerTabControl().ProjectExplorerViewMenuToolbar().getButton(VIEW_MENU).press();
+		}
+		pressKeyMultipleTimes(KeyEvent.VK_DOWN, 9);
+		pressKeys(KeyEvent.VK_ENTER);
+		mainWindow.FiltersAndCustomizationWindow().FiltersTable()
+				.click(new ClickArgs(MouseButton.LEFT, new Location(Position.TOP_LEFT, new Point(18, 38))));
+		mainWindow.FiltersAndCustomizationWindow().OKButton().click();
+		waitUntilActionFinished(5);
+	}
+
+	/**
+	 * Performs a double left click at the current mouse position
+	 */
+	public static void doubleClick() {
+		try {
+			Robot robot = new Robot();
+			robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+			robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+			robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+			robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+		} catch (AWTException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Expands code in an editor with the shortcut CTRL + MULTIPLY
+	 * 
+	 * @param editor The editor that contains the collapsed code
+	 * @throws GeneralLeanFtException
+	 */
+	public static void expandCodeInEditor(Editor editor) throws GeneralLeanFtException {
+		editor.setFocus();
+		pressKeys(KeyEvent.VK_CONTROL, KeyEvent.VK_MULTIPLY);
+	}
+
+	/**
+	 * Get the path to the directory where all screenshots for image comparison are
+	 * stored
+	 * 
+	 * @return The absolute path to the screenshot main directory
+	 */
+	public static String getScreenshotDirectory() {
+		return new File(PropertyProvider.getProperty("directory.screenshots")).getAbsolutePath();
+	}
+
+	/**
+	 * Get the path to the directory where the expected .graphml files are located
+	 * 
+	 * @return The absolute path to the ExpectedFiles main directory
+	 */
+	public static String getExpectedGraphFilesDirectory() {
+		return new File(PropertyProvider.getProperty("directory.expectedgraphfiles")).getAbsolutePath();
+	}
+
+	/**
+	 * Get the path to the directory where resources are stored
+	 * 
+	 * @return The absolute path to the resources directory
+	 */
+	public static String getResourcesDirectory() {
+		return new File(PropertyProvider.getProperty("directory.resources")).getAbsolutePath();
+	}
+
+	/**
+	 * Returns the text that is currently saved in the clipboard as String
+	 * 
+	 * @return The clipboard text
+	 */
+	public static String getTextFromClipboard() {
+		Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+		waitUntilActionFinished(1);
+		try {
+			return (String) clipboard.getData(DataFlavor.stringFlavor);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return "";
+	}
+
+	/**
+	 * Copies a String to the clipboard
+	 * 
+	 * @return The clipboard text
+	 */
+	public static void putTextToClipboard(String text) {
+		StringSelection stringSelection = null;
+		Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+		waitUntilActionFinished(1);
+		try {
+			if (text != null) {
+				stringSelection = new StringSelection(text);
+				clipboard.setContents(stringSelection, stringSelection);
+				waitUntilActionFinished(1);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Imports the discovery excel located in DemoDez18, if the project is the first
+	 * one located in the workspace
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	public static void importDiscoveryExcelOfDemoDez18() throws GeneralLeanFtException {
+		MiningApplicationModel miningAppModel = new MiningApplicationModel();
+		appmodels.MiningApplicationModel.MainWindow mainWindow = miningAppModel.MainWindow();
+		mainWindow
+				.ProjectExplorerTabControl().ProjectExplorerTreeView().getNode(mainWindow.ProjectExplorerTabControl()
+						.ProjectExplorerTreeView().buildNodePath("DemoDez18", "discovery_5_2022-03-24_13-53-03.xlsx"))
+				.openContextMenu();
+		mainWindow.ProjectExplorerTabControl().ProjectExplorerTreeView().MiningMenu().ImportExcelMenu().select();
+		waitUntilActionFinished(3);
+
+		if (mainWindow.OverwriteWindow().exists()) {
+			mainWindow.OverwriteWindow().YesButton().click();
+		}
+		waitUntilActionFinished(15);
+	}
+
+	/**
+	 * Imports the projects located in the workspace directory
+	 * 
+	 * @param workspaceDir
+	 * @throws GeneralLeanFtException
+	 */
+	public static void importProject(String workspaceDir) throws GeneralLeanFtException {
+		GeneralEclipseApplicationModel generalAppModel = new GeneralEclipseApplicationModel();
+		generalAppModel.mainWindow().FileMenu().ImportMenu().select();
+		waitUntilActionFinished(2);
+		SelectAnImportWizardTreeView treeView = generalAppModel.mainWindow().ImportWindow().SelectScreen()
+				.SelectAnImportWizardTreeView();
+		waitUntilActionFinished(2);
+		treeView.activateNode(treeView.buildNodePath("General", "Existing Projects into Workspace"));
+		waitUntilActionFinished(5);
+		pressKeys(KeyEvent.VK_BACK_SPACE);
+		/*
+		 * pressKeys(KeyEvent.VK_TAB); pressKeys(KeyEvent.VK_SHIFT, KeyEvent.VK_TAB);
+		 * pressKeys(KeyEvent.VK_DELETE);
+		 */
+		System.out.println("code worked after backspace");
+		waitUntilActionFinished(1);
+		putTextToClipboard(workspaceDir);
+		System.out.println("code copied " + workspaceDir);
+		pressCtrlAndV();
+		System.out.println("code pasted");
+		// generalAppModel.mainWindow().ImportWindow().ImportProjectsScreen().SelectADirectoryToSearchForExistingEclipseProjectsList().click();
+		// generalAppModel.mainWindow().ImportWindow().ImportProjectsScreen().SelectADirectoryToSearchForExistingEclipseProjectsList().select(workspaceDir);
+		waitUntilActionFinished(1);
+		// generalAppModel.mainWindow().ImportWindow().ImportProjectsScreen().SelectADirectoryToSearchForExistingEclipseProjectsList().click();
+		pressKeys(KeyEvent.VK_ENTER);
+		generalAppModel.mainWindow().ImportWindow().FinishButton().click();
+		waitUntilActionFinished(1);
+
+		/*
+		 * generalAppModel.mainWindow().ImportWindow().
+		 * SelectADirectoryToSearchForExistingEclipseProjectsList().select(workspaceDir)
+		 * ; //generalAppModel.mainWindow().ImportWindow().ImportProjectsScreen().
+		 * ImportProjectsList().select(workspaceDir); waitUntilActionFinished(1);
+		 * generalAppModel.mainWindow().ImportWindow().
+		 * SelectADirectoryToSearchForExistingEclipseProjectsList().click();
+		 * //generalAppModel.mainWindow().ImportWindow().ImportProjectsScreen().
+		 * ImportProjectsList().click(); pressKeys(KeyEvent.VK_ENTER);
+		 * //generalAppModel.mainWindow().ImportWindow().FinishButton1().click();
+		 * generalAppModel.mainWindow().ImportWindow().FinishButton().click();
+		 * waitUntilActionFinished(1);
+		 */
+		// If several projects are imported: multiple update working copy windows appear
+		while (generalAppModel.mainWindow().UpgradeWorkingCopy().exists()) {
+			generalAppModel.mainWindow().UpgradeWorkingCopy().NoButton().click();
+			waitUntilActionFinished(1);
+		}
+		waitUntilActionFinished(1);
+		closeSubversionNativeLibraryWindow();
+	}
+
+	/**
+	 * Does some initialization steps like closing the subclipse window, closing the
+	 * subversion native library window if it exists and maximizing the main eclipse
+	 * window
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	public static void initEclipse() throws GeneralLeanFtException {
+		// Current eclipse version used in trunk shows subclipse window
+		closeSubclipseWindow();
+		closeSubversionNativeLibraryWindow();
+		maximizeWindowSize();
+	}
+
+	/**
+	 * Short method to check if a text matches a regex by using the pattern DOTALL
+	 * 
+	 * @param text  The text that will be checked for a regex
+	 * @param regex The regex string that will used to match a text
+	 * @return true if the text matches the regex
+	 */
+	public static boolean matches(String text, String regex) {
+		return Pattern.compile(regex, Pattern.DOTALL).matcher(text).matches();
+	}
+
+	/**
+	 * Maximize the eclipse main window
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	public static void maximizeWindowSize() throws GeneralLeanFtException {
+		GeneralEclipseApplicationModel generalAppModel = new GeneralEclipseApplicationModel();
+		waitUntilActionFinished(2);
+		generalAppModel.mainWindow().maximize();
+	}
+
+	/**
+	 * Moves the mouse relative to the current position
+	 * 
+	 * @param x pixels the mouse moves from the current position in x direction
+	 * @param y pixels the mouse moves from the current position in y direction
+	 */
+	public static void mouseMove(int x, int y) {
+		try {
+			Robot robot = new Robot();
+			PointerInfo info = MouseInfo.getPointerInfo();
+			Point currentLocation = info.getLocation();
+			robot.mouseMove((currentLocation.x) + x, (currentLocation.y) + y);
+		} catch (AWTException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Moves the mouse relative to the current position
+	 * 
+	 * @param x pixels the mouse moves from the current position in x direction
+	 * @param y pixels the mouse moves from the current position in y direction
+	 */
+	public static void mouseMoveAndClick(int x, int y) {
+		moveMouseToZeroZero();
+		try {
+			Robot robot = new Robot();
+			PointerInfo info = MouseInfo.getPointerInfo();
+			Point currentLocation = info.getLocation();
+			robot.mouseMove((currentLocation.x) + x, (currentLocation.y) + y);
+		} catch (AWTException e) {
+			e.printStackTrace();
+		}
+		singleLeftClick();
+	}
+
+	/**
+	 * Moves the mouse to (0,0) location
+	 */
+	public static void moveMouseToZeroZero() {
+		Robot robot;
+		try {
+			robot = new Robot();
+			robot.mouseMove(0, 0);
+		} catch (AWTException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * This method converts points to pixels.
+	 * 
+	 * @param points The amount of points
+	 * @return The respective amount of pixels
+	 */
+	public static int convertPointsToPixels(int points) {
+		return points * 96 / 72;
+	}
+	
+	/**
+	 * Opens the project properties on the first project in the workspace Selects
+	 * the mining entry in the tree view to open the mining properties
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	public static void openMiningProjectProperties() throws GeneralLeanFtException {
+		MiningApplicationModel miningAppModel = new MiningApplicationModel();
+		miningAppModel.MainWindow().ProjectExplorerTabControl().ProjectExplorerTreeView().activateNode(
+				miningAppModel.MainWindow().ProjectExplorerTabControl().ProjectExplorerTreeView().buildNodePath(0));
+		pressKeys(KeyEvent.VK_ALT, KeyEvent.VK_ENTER);
+		waitUntilActionFinished(3);
+		miningAppModel.MainWindow().ProjectPropertiesWindow().Tree().activateNode("mining");
+		waitUntilActionFinished(5);
+		waitUntilTestObjectExists(miningAppModel.MainWindow().ProjectPropertiesWindow().TestAPIConnectionButton());
+		assertAndVerify(true, miningAppModel.MainWindow().ProjectPropertiesWindow().TestAPIConnectionButton().exists());
+		waitUntilActionFinished(2);
+	}
+
+	/**
+	 * Opens a tab in a tab control
+	 * 
+	 * @param tabToOpen  Name of the tab
+	 * @param tabControl The tabcontrol that contains the tab
+	 * @throws GeneralLeanFtException
+	 */
+	public static void openTab(String tabToOpen, TabControl tabControl) throws GeneralLeanFtException {
+		try {
+			if (!tabControl.getSelectedTab().equals(tabToOpen)) {
+				tabControl.select(tabToOpen);
+			}
+		} catch (ReplayItemNotFoundException e) {
+			try {
+				RenderedImage img = tabControl.getSnapshot();
+				Reporter.reportEvent("Tab \"" + tabToOpen + "\" not available", e.getCause().toString(), Status.Failed,
+						img);
+			} catch (ReportException reportException) {
+				throw new GeneralLeanFtException("ReportException occured");
+			}
+			throw new GeneralLeanFtException("Unkown error");
+		}
+	}
+
+	/**
+	 * Open a view by a given string name
+	 * 
+	 * @param view The view name as string
+	 * @throws GeneralLeanFtException
+	 */
+	public static void openView(String view) throws GeneralLeanFtException {
+		GeneralEclipseApplicationModel appModel = new GeneralEclipseApplicationModel();
+		appModel.mainWindow().click();
+		pressKeys(KeyEvent.VK_ALT, KeyEvent.VK_SHIFT, KeyEvent.VK_Q);
+		pressKeys(KeyEvent.VK_Q);
+		appModel.mainWindow().showViewWindow().textEditor().setText(view);
+		waitUntilActionFinished(2);
+		appModel.mainWindow().showViewWindow().OpenButton().click();
+	}
+
+	/**
+	 * Press ALT + F one time
+	 */
+	public static void pressAltAndF() {
+		pressKeys(KeyEvent.VK_ALT, KeyEvent.VK_F);
+	}
+	
+	/**
+	 * Press ALT + Enter one time
+	 */
+	public static void pressAltAndEnter() {
+		pressKeys(KeyEvent.VK_ALT, KeyEvent.VK_ENTER);
+	}
+
+	/**
+	 * Press ALT + SHIFT + A one time
+	 */
+	public static void pressAltAndShiftAndA() {
+		pressKeys(KeyEvent.VK_ALT, KeyEvent.VK_SHIFT, KeyEvent.VK_A);
+	}
+
+	/**
+	 * Press the back space key n-times. With n defined by the parameter amount
+	 * 
+	 * @param amount Specifies how often the button will be pressed
+	 */
+	public static void pressBackSpace(int amount) {
+		for (int i = 0; i < amount; i++) {
+			pressKeys(KeyEvent.VK_BACK_SPACE);
+			waitUntilActionFinished(1);
+		}
+	}
+
+	/**
+	 * Press CTRL + A followed by CTRL + C
+	 */
+	public static void pressCtrlAAndCtrlC() {
+		pressCtrlAndA();
+		pressCtrlAndC();
+	}
+
+	/**
+	 * Press CTRL + A one time
+	 */
+	public static void pressCtrlAndA() {
+		pressKeys(KeyEvent.VK_CONTROL, KeyEvent.VK_A);
+	}
+
+	/**
+	 * Press CTRL + C one time
+	 */
+	public static void pressCtrlAndC() {
+		pressKeys(KeyEvent.VK_CONTROL, KeyEvent.VK_C);
+	}
+
+	/**
+	 * Press CTRL + M one time
+	 */
+	public static void pressCtrlAndM() {
+		pressKeys(KeyEvent.VK_CONTROL, KeyEvent.VK_M);
+	}
+
+	/**
+	 * Press CTRL + NUM7 one time
+	 */
+	public static void pressCtrlAndNum7() {
+		pressKeys(KeyEvent.VK_CONTROL, KeyEvent.VK_NUMPAD7);
+	}
+
+	/**
+	 * Press CTRL + S one time
+	 */
+	public static void pressCtrlAndS() {
+		pressKeys(KeyEvent.VK_CONTROL, KeyEvent.VK_S);
+	}
+
+	public static void pressCtrlAndSingleClick() {
+		pressKeys(KeyEvent.CTRL_DOWN_MASK, InputEvent.BUTTON1_DOWN_MASK);
+	}
+
+	/**
+	 * Press CTRL + SHIFT + F one time
+	 */
+	public static void pressCtrlAndShiftAndF() {
+		pressKeys(KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT, KeyEvent.VK_F);
+	}
+
+	/**
+	 * Press CTRL + SPACE one time
+	 */
+	public static void pressCtrlAndSpace() {
+		pressKeys(KeyEvent.VK_CONTROL, KeyEvent.VK_SPACE);
+	}
+
+	/**
+	 * Press CTRL + V one time
+	 */
+	public static void pressCtrlAndV() {
+		pressKeys(KeyEvent.VK_CONTROL, KeyEvent.VK_V);
+	}
+
+	/**
+	 * Press CTRL + W one time
+	 */
+	public static void pressCtrlAndW() {
+		pressKeys(KeyEvent.VK_CONTROL, KeyEvent.VK_W);
+	}
+
+	/**
+	 * Press CTRL + X one time
+	 */
+	public static void pressCtrlAndX() {
+		pressKeys(KeyEvent.VK_CONTROL, KeyEvent.VK_X);
+	}
+
+	/**
+	 * Press CTRL + Z one time
+	 */
+	public static void pressCtrlAndZ() {
+		pressKeys(KeyEvent.VK_CONTROL, KeyEvent.VK_Z);
+	}
+
+	/**
+	 * Press the down arrow key one time
+	 */
+	public static void pressDownArrowKey() {
+		pressKeys(KeyEvent.VK_DOWN);
+	}
+
+	/**
+	 * Press the down arrow key n-times. With n defined by the parameter amount
+	 * 
+	 * @param amount                         Specifies how often the button will be
+	 *                                       pressed
+	 * @param secondsToWaitBetweenKeyPresses Specifies how much time(in seconds) is
+	 *                                       required between each key press
+	 */
+	public static void pressDownArrowKey(int amount, int secondsToWaitBetweenKeyPresses) {
+		for (int i = 0; i < amount; i++) {
+			pressDownArrowKey();
+			waitUntilActionFinished(secondsToWaitBetweenKeyPresses);
+		}
+	}
+
+	/**
+	 * Press the up arrow key n-times. With n defined by the parameter amount
+	 * 
+	 * @param amount                         Specifies how often the button will be
+	 *                                       pressed
+	 * @param secondsToWaitBetweenKeyPresses Specifies how much time(in seconds) is
+	 *                                       required between each key press
+	 * 
+	 */
+	public static void pressUpArrowKey(int amount, int secondsToWaitBetweenKeyPresses) {
+		for (int i = 0; i < amount; i++) {
+			pressUpArrowKey();
+			waitUntilActionFinished(secondsToWaitBetweenKeyPresses);
+		}
+	}
+
+	/**
+	 * Press ENTER one time
+	 */
+	public static void pressEnter() {
+		pressKeys(KeyEvent.VK_ENTER);
+	}
+
+	/**
+	 * Press escape key one time
+	 */
+	public static void pressEscape() {
+		pressKeys(KeyEvent.VK_ESCAPE);
+	}
+
+	/**
+	 * Press two keys n-times. With n defined by the parameter amount and the keys
+	 * defined by the parameter key1 and key2
+	 * 
+	 * @param key    The key that should be pressed
+	 * @param amount Specifies how often the button will be pressed
+	 */
+	public static void pressKeyComboMultipleTimes(int key1, int key2, int amount) {
+		for (int i = 0; i < amount; i++) {
+			pressKeys(key1, key2);
+		}
+	}
+	
+	/**
+	 * move the mouse Wheel @param amount times
+	 * @throws AWTException
+	 */
+	public static void moveMouseWheel(int amount) throws AWTException {
+		Robot robot = new Robot();
+		robot.mouseWheel(amount);
+	}
+
+	/**
+	 * Press a key n-times. With n defined by the parameter amount and the key
+	 * defined by the parameter key
+	 * 
+	 * @param key    The key that should be pressed
+	 * @param amount Specifies how often the button will be pressed
+	 */
+	public static void pressKeyMultipleTimes(int key, int amount) {
+		for (int i = 0; i < amount; i++) {
+			pressKeys(key);
+		}
+	}
+
+	/**
+	 * Press a key n-times with wait between each key press. With n defined by the
+	 * parameter amount, the key defined by the parameter key and the wait in
+	 * seconds defined by the parameter secondsToWaitBetweenKeyPresses
+	 * 
+	 * @param key                            The key that should be pressed
+	 * @param amount                         Specifies how often the button will be
+	 *                                       pressed
+	 * @param secondsToWaitBetweenKeyPresses Specifies the wait period in seconds
+	 *                                       between each key press
+	 */
+	public static void pressKeyMultipleTimesWithPauses(int key, int amount, int secondsToWaitBetweenKeyPresses) {
+		for (int i = 0; i < amount; i++) {
+			pressKeys(key);
+			waitUntilActionFinished(secondsToWaitBetweenKeyPresses);
+		}
+	}
+
+	/**
+	 * Press keys and release them again
+	 * 
+	 * @param keys Array of keys that will be pressed and released
+	 */
+	public static void pressKeys(int... keys) {
+		try {
+			Robot robot = new Robot();
+			for (Integer key : keys) {
+				robot.keyPress(key);
+			}
+			for (Integer key : keys) {
+				robot.keyRelease(key);
+			}
+		} catch (AWTException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Press the left arrow key one time
+	 */
+	public static void pressLeftArrowKey() {
+		pressKeys(KeyEvent.VK_LEFT);
+	}
+
+	/**
+	 * Press the right arrow key one time
+	 */
+	public static void pressRightArrowKey() {
+		pressKeys(KeyEvent.VK_RIGHT);
+	}
+
+	/**
+	 * Press the right arrow key n-times. With n defined by the parameter amount
+	 * 
+	 * @param amount                         Specifies how often the button will be
+	 *                                       pressed
+	 * @param secondsToWaitBetweenKeyPresses Specifies how much time(in seconds) is
+	 *                                       required between each key press
+	 */
+	public static void pressRightArrowKey(int amount, int secondsToWaitBetweenKeyPresses) {
+		for (int i = 0; i < amount; i++) {
+			pressRightArrowKey();
+			waitUntilActionFinished(secondsToWaitBetweenKeyPresses);
+		}
+	}
+
+	/**
+	 * Press the left arrow key n-times. With n defined by the parameter amount
+	 * 
+	 * @param amount                         Specifies how often the button will be
+	 *                                       pressed
+	 * @param secondsToWaitBetweenKeyPresses Specifies how much time(in seconds) is
+	 *                                       required between each key press
+	 */
+	public static void pressLeftArrowKey(int amount, int secondsToWaitBetweenKeyPresses) {
+		for (int i = 0; i < amount; i++) {
+			pressLeftArrowKey();
+			waitUntilActionFinished(secondsToWaitBetweenKeyPresses);
+		}
+	}
+
+	/**
+	 * Press SHIFT + A one time
+	 */
+	public static void pressShiftAndA() {
+		pressKeys(KeyEvent.VK_SHIFT, KeyEvent.VK_A);
+	}
+
+	/**
+	 * Press SHIFT + TAB one time
+	 */
+	public static void pressShiftAndTab() {
+		pressKeys(KeyEvent.VK_SHIFT, KeyEvent.VK_TAB);
+	}
+
+	/**
+	 * Press the up arrow key one time
+	 */
+	public static void pressUpArrowKey() {
+		pressKeys(KeyEvent.VK_UP);
+	}
+
+	/**
+	 * Press the tab key one time
+	 */
+	public static void pressTabKey() {
+		pressKeys(KeyEvent.VK_TAB);
+	}
+
+	/**
+	 * Removes empty lines from a string
+	 * 
+	 * @param text A string with empty lines
+	 * @return String The text without empty lines
+	 */
+	public static String removeAllEmptyLines(String text) {
+		return text.replaceAll("(?m)^[ \t]*\r?\n", "");
+	}
+
+	/**
+	 * Remove linebreaks in a given text
+	 * 
+	 * @param text with linebreaks that will be removed
+	 * @return Text from parameter text without linebreaks
+	 */
+	public static String removeLineBreaks(String text) {
+		return text.replace("\n", "").replace("\r", "");
+	}
+
+	/**
+	 * Scrolls Annotations Search Table towards right so that hyperlinks become
+	 * visible
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	public static void rightScrollAnnotationsSearchTable() throws GeneralLeanFtException {
+		Keyboard.keyDown(Keys.LEFT_CONTROL);
+		Keyboard.keyDown(Keys.LEFT_SHIFT);
+		Keyboard.keyDown(Keys.RIGHT);
+		try {
+			Thread.sleep(500);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		Keyboard.keyUp(Keys.LEFT_CONTROL);
+		Keyboard.keyUp(Keys.LEFT_SHIFT);
+		Keyboard.keyUp(Keys.RIGHT);
+	}
+
+	/**
+	 * Run the code as Java application
+	 */
+	public static void runAsJavaApplication() {
+		pressKeyMultipleTimes(KeyEvent.VK_DOWN, 22);
+		pressEnter();
+		pressEnter();
+		waitUntilActionFinished(10);
+	}
+
+	/**
+	 * Takes a screenshot of the given test object and saves the image as .PNG to
+	 * the given path
+	 * 
+	 * @param testObject
+	 * @param pathToActualImage
+	 * @throws GeneralLeanFtException
+	 * 
+	 * @throws IOException
+	 */
+	public static void saveLeanftScreenshotFromObject(TestObject testObject, String pathToActualImage)
+			throws GeneralLeanFtException, IOException {
+		RenderedImage ri = testObject.getSnapshot();
+		File actual = new File(pathToActualImage);
+		ImageIO.write(ri, "PNG", actual);
+	}
+
+	/**
+	 * Saves a screenshot of the whole screen to the given path
+	 * 
+	 * @param pathToImage
+	 * @throws AWTException
+	 * @throws IOException
+	 */
+	public static void saveScreenshotOfWholeScreen(String pathToImage) throws AWTException, IOException {
+		BufferedImage image = new Robot()
+				.createScreenCapture(new Rectangle(Toolkit.getDefaultToolkit().getScreenSize()));
+		ImageIO.write(image, "png", new File(pathToImage));
+	}
+
+	/**
+	 * Selects a row from a table by the cell content
+	 * 
+	 * @param table     The table that should contain a cell value
+	 * @param cellValue The cell value that should be selected in the table
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	public static void selectTableRowByCellContent(Table table, String cellValue) throws GeneralLeanFtException {
+		List<TableRow> rows = table.getRows();
+		int i = 0;
+		for (TableRow row : rows) {
+			for (TableCell cell : row.getCells()) {
+				if (cell.getValue().toString().equals(cellValue)) {
+					table.activateRow(i);
+					return;
+				}
+			}
+			i++;
+		}
+		throw new ReplayItemNotFoundException(table,
+				"The table row with cell Value\"" + cellValue + "\" is not available");
+	}
+
+	/**
+	 * Enters the given server URL clicks on "Connect" and then clicks "Logon"
+	 * Performs a Login in Keycloak (through the browser) Clicks Test Api-server
+	 * connection", Verifies that the connection was successful, closes the info
+	 * window and the preferences window
+	 * 
+	 * @param miningServerURL
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	public static void establishApiServerConnection(String miningServerURL) throws GeneralLeanFtException {
+		appmodels.MiningApplicationModel.MainWindow mainWindow = new MiningApplicationModel().MainWindow();
+
+		mainWindow.WindowMenu().preferencesMenu().select();
+		mainWindow.PreferencesWindow().Tree().activateNode("mining");
+
+		if (!mainWindow.PreferencesWindow().URLEditor().isEnabled()) {
+			mainWindow.PreferencesWindow().DisconnectButton().click();
+		}
+		waitUntilActionFinished(2);
+
+		mainWindow.PreferencesWindow().URLEditor().setText(miningServerURL);
+		mainWindow.PreferencesWindow().ConnectButton().click();
+		if (miningServerURL.contains("elb.amazonaws.com")) {
+			waitUntilActionFinished(60);
+		} else {
+			waitUntilActionFinished(10);
+		}
+		if (mainWindow.PreferencesWindow().LogonButton().exists()) {
+			mainWindow.PreferencesWindow().LogonButton().click();
+			BrowserOperations.login();
+			waitUntilActionFinished(3);
+			pressCtrlAndW();
+			waitUntilActionFinished(2);
+		}
+		mainWindow.PreferencesWindow().ApplyButton().click();
+		waitUntilActionFinished(3);
+		mainWindow.PreferencesWindow().TestAPIConnectionButton().click();
+		waitUntilActionFinished(3);
+		assertAndVerify(true, mainWindow.PreferencesWindow().serverInfoWindow().ServerConnectionSuccessText().getText()
+				.contains("successful"));
+
+		mainWindow.PreferencesWindow().serverInfoWindow().OKButton().click();
+		mainWindow.PreferencesWindow().ApplyAndCloseButton().click();
+	}
+
+	/**
+	 * Sets the M2_REPO variable and the classpath from a variable. For this method
+	 * the MeeclipseApplicationModel! There is no guarantee that it will also work
+	 * for other perspectives than java/meeclipse
+	 * 
+	 * @param m2Repo    The maven repository directory
+	 * @param classpath The classpath that will be set to the .classpath file
+	 * @throws GeneralLeanFtException
+	 */
+	public static void setClasspathAndM2Repo(String m2Repo, String classpath) throws GeneralLeanFtException {
+		MainWindow mainWindow = new MeeclipseApplicationModel().MainWindow();
+		PackageExplorerTreeView packageExplorerTreeView = mainWindow.PackageExplorerTabControl()
+				.PackageExplorerTreeView();
+
+		packageExplorerTreeView.select(packageExplorerTreeView.buildNodePath(0));
+		mainWindow.PackageExplorerTabControl().PackageViewMenuToolbar().getButton(VIEW_MENU).press();
+		mainWindow.FiltersMenu().select();
+		mainWindow.JavaElementFiltersWindow().Table()
+				.click(new ClickArgs(MouseButton.LEFT, new Location(Position.TOP_LEFT, new Point(15, 15))));
+		mainWindow.JavaElementFiltersWindow().OKButton().click();
+		packageExplorerTreeView.activateNode(packageExplorerTreeView.buildNodePath(0, ".classpath"));
+		mainWindow.EditorTabControl().EditorWindowTextEditor().setText("");
+		mainWindow.EditorTabControl().EditorWindowTextEditor().setText(classpath);
+		pressCtrlAndS();
+
+		mainWindow.WindowMenu().PreferencesMenu().select();
+		mainWindow.PreferencesWindow().Tree().activateNode("Java;Build Path;Classpath Variables");
+		mainWindow.PreferencesWindow().ClasspathVariablesScreen().NewButton().click();
+		mainWindow.PreferencesWindow().NewVariableEntryWindow().NameEditor().sendKeys("M2_REPO");
+		mainWindow.PreferencesWindow().NewVariableEntryWindow().PathEditor().setText(m2Repo);
+		mainWindow.PreferencesWindow().NewVariableEntryWindow().OKButton().click();
+		mainWindow.PreferencesWindow().ApplyAndCloseButton().click();
+		mainWindow.PreferencesWindow().ClasspathVariablesChangedWindow().YesButton().click();
+	}
+
+	/**
+	 * Performs a single left click at the current mouse position
+	 */
+	public static void singleLeftClick() {
+		try {
+			Robot robot = new Robot();
+			robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+			robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+		} catch (AWTException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Performs a single right click at the current mouse position
+	 */
+	public static void singleRightClick() {
+		try {
+			Robot robot = new Robot();
+			robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
+			robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
+		} catch (AWTException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Starts the code translation editor
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	public static void startCodeTranslationEdtior() throws GeneralLeanFtException {
+		Keyboard.keyDown(Keyboard.Keys.CONTROL);
+		Keyboard.keyDown(Keyboard.Keys.ALT);
+		Keyboard.pressKey(Keyboard.Keys.U);
+		Keyboard.keyUp(Keyboard.Keys.CONTROL);
+		Keyboard.keyUp(Keyboard.Keys.ALT);
+	}
+
+	/**
+	 * Clicks on the "Open Perspective" button in the toolbar and selects the
+	 * perspective specified by the parameter perspective in the dialog
+	 * 
+	 * @param perspective Name of the perspective visible in the table (e.g. "Java"
+	 *                    or "Natural (default)")
+	 * @throws GeneralLeanFtException
+	 */
+	public static void switchPerspective(String perspective) throws GeneralLeanFtException {
+		GeneralEclipseApplicationModel generalAppModel = new GeneralEclipseApplicationModel();
+		waitUntilActionFinished(2);
+		generalAppModel.mainWindow().PerspectiveToolBar().getButton("Open Perspective").press();
+		selectTableRowByCellContent(generalAppModel.mainWindow().OpenPerspectiveWindow().Table(), perspective);
+		waitUntilActionFinished(5);
+		if (perspective.contentEquals("Natural") || perspective.contentEquals("Cobol")) {
+			disableHiddenResourcesFilter(perspective);
+		}
+	}
+
+	/**
+	 * Trace the selected field
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	public static void traceSelectedField() throws GeneralLeanFtException {
+		Keyboard.keyDown(Keyboard.Keys.ALT);
+		Keyboard.keyDown(Keyboard.Keys.SHIFT);
+		Keyboard.pressKey(Keyboard.Keys.M);
+		waitUntilActionFinished(1);
+		Keyboard.keyUp(Keyboard.Keys.ALT);
+		Keyboard.keyUp(Keyboard.Keys.SHIFT);
+		Keyboard.pressKey(Keyboard.Keys.F);
+	}
+
+	/**
+	 * Types the passed characters in capital Letters
+	 * 
+	 * @param keyCodes characters to type as capital letters
+	 */
+	public static void typeCapitalLetters(int... keyCodes) {
+		try {
+			Robot robot = new Robot();
+			for (int keyCode : keyCodes) {
+				robot.keyPress(KeyEvent.VK_SHIFT);
+				robot.keyPress(keyCode);
+				robot.keyRelease(KeyEvent.VK_SHIFT);
+			}
+		} catch (AWTException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Verifies an image taken at runtime with an expected image using RGB
+	 * comparison returns true if difference is less than 20 percent!
+	 * 
+	 * @param the snapshot of the image taken during runtime in RenderededImage
+	 *            format
+	 * 
+	 * @throws IOException
+	 */
+	public static Boolean verifyImage(String pathToExpectedImage, String pathToActualImage) throws IOException {
+		BufferedImage expected = null;
+		BufferedImage actual = null;
+		Boolean imageMatches = false;
+		File expectedFile = null;
+		File actualFile = null;
+
+		try {
+			expectedFile = new File(pathToExpectedImage);
+			actualFile = new File(pathToActualImage);
+
+			expected = ImageIO.read(expectedFile);
+			actual = ImageIO.read(actualFile);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		int width = expected.getWidth();
+		int height = expected.getHeight();
+
+		// Image verification code comparing RGB values
+		try {
+			long difference = 0;
+			// Extracting the red, blue, green components from both images
+			int rgbExpected = 0;
+			int redExpected = 0;
+			int greenExpected = 0;
+			int blueExpected = 0;
+			int rgbActual = 0;
+			int redActual = 0;
+			int greenActual = 0;
+			int blueActual = 0;
+			for (int y = 0; y < height; y++) {
+				for (int x = 0; x < width; x++) {
+					rgbExpected = expected.getRGB(x, y);
+					rgbActual = actual.getRGB(x, y);
+					redExpected = (rgbExpected >> 16) & 0xff;
+					greenExpected = (rgbExpected >> 8) & 0xff;
+					blueExpected = (rgbExpected) & 0xff;
+					redActual = (rgbActual >> 16) & 0xff;
+					greenActual = (rgbActual >> 8) & 0xff;
+					blueActual = (rgbActual) & 0xff;
+					difference += Math.abs(redExpected - redActual);
+					difference += Math.abs(greenExpected - greenActual);
+					difference += Math.abs(blueExpected - blueActual);
+				}
+			}
+
+			// Total number of red, blue, green pixels = width * height
+			// So total number of pixels = width * height * 3
+			double totalPixels = width * height * 3;
+
+			// Normalizing the value of different pixels for accuracy(average pixels per
+			// color component)
+			double avgDifferentPixels = difference / totalPixels;
+
+			// There are 255 values of pixels in total
+			double percentage = (avgDifferentPixels / 255) * 100;
+			System.out.println("Difference Percentage-->" + percentage);
+
+			if (percentage < 0.5) {
+				imageMatches = true;
+			} else {
+				imageMatches = false;
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		// Selecting the image file created during runtime as new image will be created
+		// in the next run
+		if (actualFile.exists()) {
+			actualFile.delete();
+		}
+		return imageMatches;
+	}
+
+	/**
+	 * Wait a defined time until page in the browser exists. The method waits until
+	 * the browser is attached with the given regular expression of pageTitle and
+	 * returns it. If the browser could not be attached, because the maxWaitTime ran
+	 * out or the pageTitle didn't exist, an exception will be thrown.
+	 * 
+	 * @param pageTitle   The title of the web page as regular expression
+	 * @param maxWaitTime The maximum time to wait in seconds
+	 * @return The browser with the attached page
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	public Browser waitUntilPageExistsInBrowserWithRegEx(RegExpProperty pageTitle, int maxWaitTime)
+			throws GeneralLeanFtException {
+		int interval = 5;
+		int totalWaitTime = maxWaitTime;
+		GeneralLeanFtException exception = new GeneralLeanFtException(
+				"Could not find a page with following regular expression " + pageTitle + " in the attached browser");
+		while (totalWaitTime > 0) {
+			try {
+				return BrowserFactory.attach(new BrowserDescription.Builder().title(pageTitle).build());
+			} catch (GeneralLeanFtException e) {
+				totalWaitTime -= interval;
+				waitUntilActionFinished(interval);
+			}
+		}
+		throw exception;
+	}
+
+	/**
+	 * Wait a defined time until page in the browser exists.
+	 * 
+	 * @param pageTitle   The title of the web page
+	 * @param maxWaitTime The maximum time to wait in seconds
+	 * @return The browser with the attached page
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	public Browser waitUntilPageExistsInBrowser(String pageTitle, int maxWaitTime) throws GeneralLeanFtException {
+		int interval = 5;
+		int totalWaitTime = maxWaitTime;
+		GeneralLeanFtException exception = new GeneralLeanFtException(
+				"Could not find a page with title " + pageTitle + " in the attached browser");
+		while (totalWaitTime > 0) {
+			try {
+				return BrowserFactory.attach(new BrowserDescription.Builder().title(pageTitle).build());
+			} catch (GeneralLeanFtException e) {
+				totalWaitTime -= interval;
+				waitUntilActionFinished(interval);
+			}
+		}
+		throw exception;
+	}
+
+	/**
+	 * Wait a defined time until url in the browser exists.
+	 * 
+	 * @param url         The url of the web page
+	 * @param maxWaitTime The maximum time to wait in seconds
+	 * @return The browser with the attached url
+	 * @throws GeneralLeanFtException
+	 */
+	public Browser waitUntilUrlExistsInBrowser(String url, int maxWaitTime) throws GeneralLeanFtException {
+		int interval = 5;
+		int totalWaitTime = maxWaitTime;
+		GeneralLeanFtException exception = new GeneralLeanFtException(
+				"Could not find a page with url " + url + " in the attached browser");
+		while (totalWaitTime > 0) {
+			try {
+				return BrowserFactory.attach(new BrowserDescription.Builder().url(url).build());
+			} catch (GeneralLeanFtException e) {
+				totalWaitTime -= interval;
+				waitUntilActionFinished(interval);
+			}
+		}
+		throw exception;
+	}
+
+	/**
+	 * Pause the execution for a given amount of time
+	 * 
+	 * @param seconds Defines how long the execution is paused
+	 */
+	public static void waitUntilActionFinished(long seconds) {
+		try {
+			Thread.sleep(seconds * 1000 * WAITING_FACTOR);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Wait until a test object has the specified visible text
+	 * 
+	 * @param testObject   The object that should have a specified visible text
+	 * @param expectedText The text that the testObject must show
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	public static void waitUntilTestObjectContainsVisibleText(TestObject testObject, String expectedText)
+			throws GeneralLeanFtException {
+		WaitUntilTestObjectState.waitUntil(testObject, new WaitUntilEvaluator<TestObject>() {
+			public boolean evaluate(TestObject testObject) {
+				try {
+					return testObject.getVisibleText().contains(expectedText);
+				} catch (Exception e) {
+					return false;
+				}
+			}
+		});
+	}
+
+	/**
+	 * Wait until a test object is no longer visible
+	 * 
+	 * @param testObject The object that should not be visible
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	public static void waitUntilTestObjectDoesNotExist(TestObject testObject) throws GeneralLeanFtException {
+		WaitUntilTestObjectState.waitUntil(testObject, new WaitUntilEvaluator<TestObject>() {
+			public boolean evaluate(TestObject testObject) {
+				try {
+					return !testObject.exists();
+				} catch (Exception e) {
+					return false;
+				}
+			}
+		});
+	}
+
+	/**
+	 * Wait until a test object is visible
+	 * 
+	 * @param testObject The object that should exist
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	public static void waitUntilTestObjectExists(TestObject testObject) throws GeneralLeanFtException {
+		WaitUntilTestObjectState.waitUntil(testObject, new WaitUntilEvaluator<TestObject>() {
+			public boolean evaluate(TestObject testObject) {
+				try {
+					return testObject.exists();
+				} catch (Exception e) {
+					return false;
+				}
+			}
+		});
+	}
+
+	/**
+	 * The countTreeViewNodeSubitems method counts the Tree view subitems nodes.
+	 * 
+	 * @param treeView
+	 * @return count value of the tree view node
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	public int countTreeViewNodeSubitems(TreeView treeView, TreeViewNode node) throws GeneralLeanFtException {
+		node.expand();
+		int i = 0;
+		ModifiableReportConfiguration mrc = null;
+		try {
+			mrc = getReportConfiguration();
+		} catch (URISyntaxException | IOException e) {
+			e.printStackTrace();
+		}
+		getReporter().setReportLevel(ReportLevel.Off);
+
+		try {
+			for (i = 0; i < treeView.getVisibleNodesCount(); i++) {
+				treeView.getNode(node.getPath() + ";#" + i).getColumnValue(0);
+			}
+		} catch (ReplayArgumentOutOfRangeException e) {
+			return i;
+		}
+		getReporter().setReportLevel(mrc.getReportLevel());
+		return treeView.getVisibleNodesCount();
+	}
+
+	/**
+	 * The isTreeViewEmpty method checks if treeView is empty or not by using the
+	 * getVisibleNodesCount method. If the treeView is empty, the thrown error is
+	 * caught and the variable isEmpty is set to false. To avoid messing up, the
+	 * leanft report is disabled during this operation.
+	 * 
+	 * @param javaTreeViewNodeBase
+	 * @return true if the javaTreeViewNodeBase is empty, false if not empty
+	 * @throws GeneralLeanFtException
+	 */
+	public boolean isTreeViewEmpty(JavaTreeViewNodeBase javaTreeViewNodeBase) throws GeneralLeanFtException {
+		boolean isEmpty = true;
+		ModifiableReportConfiguration mrc = null;
+		try {
+			mrc = getReportConfiguration();
+		} catch (URISyntaxException | IOException e) {
+			e.printStackTrace();
+		}
+		getReporter().setReportLevel(ReportLevel.Off);
+
+		try {
+			if (javaTreeViewNodeBase.getVisibleNodesCount() > 0) {
+				isEmpty = false;
+			}
+		} catch (ReplayObjectNotFoundException e) {
+			e.printStackTrace();
+		}
+		getReporter().setReportLevel(mrc.getReportLevel());
+		return isEmpty;
+	}
+
+	/**
+	 * The isTreeViewEmptyUsingTreeViewParam method checks if a TreeView is empty or
+	 * not by using the getVisibleNodesCount method. If the TreeView is empty, the
+	 * thrown error is caught and the variable isEmpty is set to false. To avoid
+	 * messing up, the leanft report is disabled during this operation.
+	 * 
+	 * @param treeView
+	 * @return true if the treeView is empty, false if not empty
+	 * @throws GeneralLeanFtException
+	 */
+	public boolean isTreeViewEmptyUsingTreeViewParam(TreeView treeView) throws GeneralLeanFtException {
+		boolean isEmpty = true;
+		ModifiableReportConfiguration mrc = null;
+		try {
+			mrc = getReportConfiguration();
+		} catch (URISyntaxException | IOException e) {
+			e.printStackTrace();
+		}
+		getReporter().setReportLevel(ReportLevel.Off);
+
+		try {
+			if (treeView.getVisibleNodesCount() > 0) {
+				isEmpty = false;
+			}
+		} catch (ReplayObjectNotFoundException e) {
+			e.printStackTrace();
+		}
+		getReporter().setReportLevel(mrc.getReportLevel());
+		return isEmpty;
+	}
+
+	/**
+	 * The node exists method checks if a node in a treeView exists by using the
+	 * getColumnValue method. If the node does not exits the thrown error is caught
+	 * and the variable exists is set to false. To avoid messing up the the leanft
+	 * report is disabled during this operation.
+	 * 
+	 * @param the node to search for
+	 * @return true if the node exists, false if the node does not exist
+	 * @throws GeneralLeanFtException
+	 */
+	public boolean nodeExists(TreeViewNode node) throws GeneralLeanFtException {
+		boolean exists;
+		ModifiableReportConfiguration mrc = null;
+		try {
+			mrc = getReportConfiguration();
+		} catch (URISyntaxException | IOException e) {
+			e.printStackTrace();
+		}
+		getReporter().setReportLevel(ReportLevel.Off);
+		try {
+			node.getColumnValue(0);
+			exists = true;
+		} catch (ReplayArgumentOutOfRangeException | ReplayItemNotFoundException e) {
+			exists = false;
+		}
+		getReporter().setReportLevel(mrc.getReportLevel());
+		return exists;
+	}
+
+	/**
+	 * Wait a defined time until a node exists
+	 * 
+	 * @param node        to search for
+	 * @param maxWaitTime The maximum time to wait in seconds
+	 * @return True if the node exists, false if it still not visible when then wait
+	 *         maximum wait time is over
+	 * @throws GeneralLeanFtException
+	 */
+	public boolean waitUntilNodeExists(TreeViewNode node, int maxWaitTime) throws GeneralLeanFtException {
+		int interval = 5;
+		int totalWaitTime = maxWaitTime;
+		boolean nodeExists = nodeExists(node);
+		while (!nodeExists && totalWaitTime > 0) {
+			totalWaitTime -= interval;
+			waitUntilActionFinished(interval);
+			nodeExists = nodeExists(node);
+		}
+		return nodeExists;
+	}
+
+	/**
+	 * The getTreeViewNodeUsingRegEx method checks if the TreeView has a
+	 * TreeViewNode which matches with the given regular expression. It then returns
+	 * the matching TreeViewNode.
+	 * 
+	 * @param treeView	which should contain the TreeViewNode
+	 * @param node		TreeViewNode inside which the wanted TreeViewNode should looked for
+	 * @param regEx		the name of the TreeViewNode which is looked for as a regular expression
+	 * @return returns 	the matching TreeViewNode
+	 * @throws GeneralLeanFtException
+	 */
+	public TreeViewNode getTreeViewNodeUsingRegEx(TreeView treeView, TreeViewNode node, String regEx)
+			throws GeneralLeanFtException {
+		ModifiableReportConfiguration mrc = null;
+		try {
+			mrc = getReportConfiguration();
+		} catch (URISyntaxException | IOException e) {
+			e.printStackTrace();
+		}
+		getReporter().setReportLevel(ReportLevel.Off);
+		TreeViewNode treeViewNode = null;
+		try {
+			for (int i = 0; i < treeView.getVisibleNodesCount(); i++) {
+				if (treeView.getNode(node.getPath() + ";#" + i).getColumnValue(0).matches(regEx)) {
+					treeViewNode = treeView.getNode(node.getPath() + ";#" + i);
+					break;
+				}
+			}
+		} catch (ReplayArgumentOutOfRangeException e) {
+			System.out.println("There is not a TreeViewNode with matching regular expression");
+		}
+		getReporter().setReportLevel(mrc.getReportLevel());
+		return treeViewNode;
+	}
+
+	/**
+	 * Resizes a given image
+	 * 
+	 * @param inputImagePath
+	 * @param outputImagePath
+	 * @param scaledWidth
+	 * @param scaledHeight
+	 * 
+	 * @throws IOException
+	 */
+	public static void resize(String inputImagePath, String outputImagePath, int scaledWidth, int scaledHeight)
+			throws IOException {
+		// reads input image
+		File inputFile = new File(inputImagePath);
+		BufferedImage inputImage = ImageIO.read(inputFile);
+
+		// creates output image
+		BufferedImage outputImage = new BufferedImage(scaledWidth, scaledHeight, inputImage.getType());
+
+		// scales the input image to the output image
+		Graphics2D g2d = outputImage.createGraphics();
+		g2d.drawImage(inputImage, 0, 0, scaledWidth, scaledHeight, null);
+		g2d.dispose();
+
+		// extracts extension of output file
+		String formatName = outputImagePath.substring(outputImagePath.lastIndexOf(".") + 1);
+
+		// writes to output file
+		ImageIO.write(outputImage, formatName, new File(outputImagePath));
+	}
+
+	/**
+	 * Restarts the Eclipse. This approach is done using key press shortcut.
+	 * Sometimes "mainWindow.FileMenu().Restart().select()" does not work. In that
+	 * case, this method can be used.
+	 */
+	public static void restartEclipse() {
+		pressKeys(KeyEvent.VK_ALT);
+		waitUntilActionFinished(1);
+		pressKeys(KeyEvent.VK_UP);
+		waitUntilActionFinished(1);
+		pressKeys(KeyEvent.VK_UP);
+		waitUntilActionFinished(1);
+		pressKeys(KeyEvent.VK_UP);
+		waitUntilActionFinished(1);
+		pressKeys(KeyEvent.VK_ENTER);
+	}
+
+	/**
+	 * minimizes Eclipse
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	public void minimizeEclipse() throws GeneralLeanFtException {
+		GeneralEclipseApplicationModel generalAppModel = new GeneralEclipseApplicationModel();
+		generalAppModel.mainWindow().minimize();
+		waitUntilActionFinished(2);
+	}
+
+	/**
+	 * Read file content into the string
+	 * 
+	 * @param filePath
+	 * @return the whole file as one string
+	 */
+	public static String readFileLineByLine(String filePath) {
+		StringBuilder contentBuilder = new StringBuilder();
+
+		try (Stream<String> stream = Files.lines(Paths.get(filePath), StandardCharsets.UTF_8)) {
+			stream.forEach(s -> contentBuilder.append(s).append("\n"));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return contentBuilder.toString();
+	}
+
+	/**
+	 * Read n-th Line of a file
+	 * 
+	 * @param filePath
+	 * @param lineNo
+	 * @return the string
+	 */
+	public static String readNthLineOfAFile(String filePath, int lineNo) {
+		String line = "";
+		int lNo = 1;
+		try {
+			Scanner sc = new Scanner(new File(filePath));
+			while (sc.hasNextLine()) {
+				line = sc.nextLine();
+				if (lNo++ == lineNo) {
+					break;
+				}
+			}
+			sc.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+		return line;
+	}
+
+	/**
+	 * Read file content line by line into a list (1 line = 1 list item).
+	 * 
+	 * @param filePath
+	 * @return the list
+	 */
+	public static List<String> readFileAsList(String filePath) {
+		List<String> result = new LinkedList<>();
+		try (Stream<String> stream = Files.lines(Paths.get(filePath), StandardCharsets.UTF_8)) {
+			stream.forEach(s -> result.add(s + "\n"));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return result;
+	}
+
+	/**
+	 * Read the list containing csv data and removed the quotes present
+	 * 
+	 * @param csvFileContent
+	 * @return csvFileContent as list without quotes
+	 */
+	public static List<String> removeQuotesFromCSV(List<String> csvFileContent) {
+		List<String> csvFileContentWithoutQuotes = new LinkedList<>();
+		for (String line : csvFileContent) {
+			csvFileContentWithoutQuotes.add(line.replaceAll("\"", ""));
+		}
+		return csvFileContentWithoutQuotes;
+	}
+
+	/**
+	 * Checks the total number of lines present in a file opened in editor, it is
+	 * assumed that last line is blank
+	 * 
+	 * @param editor                     Editor window
+	 * @param expectedTotalNumberOfLines Number of lines expected to be present
+	 * 
+	 * @return True if the expected number of lines are present else False
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	public static boolean checkTotalNumberOfLines(Editor editor, int expectedTotalNumberOfLines)
+			throws GeneralLeanFtException {
+		expandCodeInEditor(editor);
+		String text = editor.getText();
+		String[] lines = text.split("\r\n|\r|\n");
+		int actualTotalNumberOfLines = lines.length + 1;
+
+		return (expectedTotalNumberOfLines == actualTotalNumberOfLines);
+	}
+
+	/**
+	 * Press the delete key n-times. With n defined by the parameter amount
+	 * 
+	 * @param amount Specifies how often the button will be pressed
+	 */
+	public static void pressDeleteKey(int amount) {
+		for (int i = 0; i < amount; i++) {
+			pressKeys(KeyEvent.VK_DELETE);
+			try {
+				Thread.sleep(200);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	/**
+	 * Check if the java version set by the parameter javaVersion is java8.
+	 * 
+	 * @return true if javaVersion is java8, false if not
+	 */
+	public static boolean isJava8() {
+		return ParameterProvider.getParameter("javaVersion").equals("java8");
+	}
+
+	/**
+	 * Add the Cobol Mainframe project nature to the discovery-jumpstart project.
+	 * 
+	 * This is currently required as otherwise the "mining" entry of the project's
+	 * context menu is not visible.
+	 */
+	public static void addLegacyNatureToProject() {
+		MiningApplicationModel appModel;
+		appmodels.MiningApplicationModel.MainWindow mainWindow;
+		ProjectExplorerTreeView projectExplorerTreeView;
+		try {
+			appModel = new MiningApplicationModel();
+			mainWindow = appModel.MainWindow();
+			projectExplorerTreeView = mainWindow.ProjectExplorerTabControl().ProjectExplorerTreeView();
+			projectExplorerTreeView.activateNode(projectExplorerTreeView.buildNodePath("discovery-jumpstart"));
+			pressKeys(KeyEvent.VK_ALT, KeyEvent.VK_ENTER);
+			waitUntilActionFinished(3);
+			mainWindow.ProjectPropertiesWindow().Tree().activateNode("Project Natures");
+			mainWindow.ProjectPropertiesWindow().Add().click();
+			waitUntilActionFinished(2);
+			mainWindow.ProjectPropertiesWindow().ConfirmProjectNatureUpdateWindow().OKButton().click();
+			mainWindow.ProjectPropertiesWindow().SelectNatureWindow().NatureEditor().setText("Cobol Mainframe");
+			waitUntilActionFinished(2);
+			mainWindow.ProjectPropertiesWindow().SelectNatureWindow().OKButton().click();
+			waitUntilActionFinished(2);
+			mainWindow.ProjectPropertiesWindow().ApplyAndCloseButton().click();
+			waitUntilActionFinished(2);
+			assertAndVerify(false, mainWindow.ProjectPropertiesWindow().exists());
+			waitUntilActionFinished(2);
+		} catch (GeneralLeanFtException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * This method will accept the String file pattern. It searches the file using
+	 * the Search shortcut menu. Then it opens that file using default text editor.
+	 * Lastly it finds out the exact filename using Location value in Properties.
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	public static String findFileNameWithPatternUsingSearch(String filePattern) throws GeneralLeanFtException {
+		MiningApplicationModel appModel;
+		appmodels.MiningApplicationModel.MainWindow mainWindow;
+		appModel = new MiningApplicationModel();
+		mainWindow = appModel.MainWindow();
+
+		putTextToClipboard(filePattern);
+		pressKeys(KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT, KeyEvent.VK_R);
+		waitUntilActionFinished(1);
+		pressCtrlAndV();
+		waitUntilActionFinished(1);
+
+		/* Open file in text editor. */
+		pressTabKey();
+		waitUntilActionFinished(1);
+		pressTabKey();
+		waitUntilActionFinished(1);
+		pressTabKey();
+		waitUntilActionFinished(1);
+		pressEnter();
+		waitUntilActionFinished(1);
+		pressDownArrowKey();
+		waitUntilActionFinished(1);
+		pressEnter();
+		waitUntilActionFinished(5);
+
+		/* Find the location of the file in the project. */
+		pressKeys(KeyEvent.VK_ALT, KeyEvent.VK_ENTER);
+		waitUntilActionFinished(2);
+		String filePath = mainWindow.PropertiesWindow().LocationEditor().getText();
+		mainWindow.PropertiesWindow().CancelButton().click();
+		return filePath.substring(filePath.lastIndexOf("\\") + 1);
+	}
+
+	/**
+	 * This method will accept the String directory path. It returns the last
+	 * modified file in the directory
+	 * 
+	 * @param destDir - If not empty, the last modified files in the directory
+	 *                specified in @param dirPath, will be moved to @param destDir
+	 * @throws GeneralLeanFtException
+	 */
+	public static String getLatestFilefromDir(String dirPath, String destDir) {
+		File dir = new File(dirPath);
+		File[] files = dir.listFiles();
+		if (files == null || files.length == 0) {
+			return null;
+		}
+		File lastModifiedFile = files[0];
+		for (int i = 1; i < files.length; i++) {
+			if (lastModifiedFile.lastModified() < files[i].lastModified()) {
+				lastModifiedFile = files[i];
+			}
+		}
+
+		if (!destDir.equals("") && lastModifiedFile.isFile()) {
+			try {
+				FileUtils.moveFileToDirectory(lastModifiedFile, new File(destDir), true);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			return destDir + "\\" + lastModifiedFile.getName();
+		}
+		return lastModifiedFile.getAbsolutePath();
+	}
+
+	/**
+	 * This method will accept the String directory path and deletes the directory.
+	 * 
+	 * @param directoryPath     - the location of directory to delete/recreate
+	 * @param recreateDirectory - If true, creates an empty directory with the same
+	 *                          name
+	 */
+	public static void deleteOrRecreateDirectory(String directoryPath, boolean recreateDirectory) {
+		try {
+			FileUtils.deleteDirectory(new File(directoryPath));
+			if (recreateDirectory) {
+				FileUtils.forceMkdir(new File(directoryPath));
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Takes the path of the image and clicks / hovers it
+	 * 
+	 * @param imgPath
+	 * @param hover
+	 * @throws FindFailed
+	 */
+	public void clickOrHoverOnImage(String imgPath, boolean hover) throws FindFailed {
+		Screen sc = new Screen();
+		org.sikuli.script.Pattern pt = new org.sikuli.script.Pattern(imgPath);
+		if (hover) {
+			sc.hover(pt);
+		} else {
+			sc.click(pt);
+		}
+	}
+
+	/**
+	 * Takes the path of the image and checks if the image exists on screen
+	 * 
+	 * @param imgPath
+	 * @throws FindFailed
+	 */
+	public boolean checkIfImageExists(String imgPath) throws FindFailed {
+		Screen sc = new Screen();
+		org.sikuli.script.Pattern pt = new org.sikuli.script.Pattern(imgPath);
+		return (sc.exists(pt) != null);
+	}
+	
+	/**
+	 * Waits until the connection to the target is established. It checks if the
+	 * TestObject (ProgressInformationWindow) exists with a waiting time of ~20
+	 * seconds before it checks again. The loop repeats 10 times before terminating.
+	 * 
+	 * @param testObject which is waiting for to disappear
+	 * @throws GeneralLeanFtException
+	 */
+	public void waitUntilConnectionToTargetIsEstablished(TestObject testObject) throws GeneralLeanFtException {
+		int counter = 0;
+		while (testObject.exists(5)) {
+			System.out.println(
+					"Counter " + counter + " Time: " + DateTimeFormatter.ofPattern("HH:mm:ss").format(LocalTime.now()));
+			if (counter >= 10) {
+				break;
+			}
+			waitUntilTestObjectDoesNotExist(testObject);
+			counter++;
+			System.out.println("Time: " + DateTimeFormatter.ofPattern("HH:mm:ss").format(LocalTime.now()));
+		}
+	}
+	
+	/**
+	 * Enters the given localhost URL with port number.
+	 * Clicks on "Connect".
+	 * Provide the Access Token and click Test Api-server connection.
+	 * Verify that the connection was successful, closes the info window and the preferences window.
+	 * 
+	 * @param portNumber
+	 * @param accessToken
+	 * 
+	 * @throws GeneralLeanFtException
+	 */
+	public static void establishLocalhostApiServerConnection(String miningServerURL, String accessToken) throws GeneralLeanFtException {
+		appmodels.MiningApplicationModel.MainWindow mainWindow = new MiningApplicationModel().MainWindow();
+
+		mainWindow.WindowMenu().preferencesMenu().select();
+		mainWindow.PreferencesWindow().Tree().activateNode("mining");
+
+		if (!mainWindow.PreferencesWindow().URLEditor().isEnabled()) {
+			mainWindow.PreferencesWindow().DisconnectButton().click();
+		}
+		waitUntilActionFinished(2);
+		mainWindow.PreferencesWindow().URLEditor().setText(miningServerURL);
+		mainWindow.PreferencesWindow().ConnectButton().click();
+		mainWindow.PreferencesWindow().AccessTokenEditor().setText(accessToken);
+		mainWindow.PreferencesWindow().ApplyButton().click();
+		waitUntilActionFinished(3);
+		mainWindow.PreferencesWindow().TestAPIConnectionButton().click();
+		waitUntilActionFinished(3);
+		assertAndVerify(true, mainWindow.PreferencesWindow().serverInfoWindow().ServerConnectionSuccessText().getText()
+				.contains("successful"));
+		mainWindow.PreferencesWindow().serverInfoWindow().OKButton().click();
+		mainWindow.PreferencesWindow().ApplyAndCloseButton().click();
+	}
+}

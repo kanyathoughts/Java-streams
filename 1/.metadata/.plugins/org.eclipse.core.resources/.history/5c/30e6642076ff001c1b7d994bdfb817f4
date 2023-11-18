@@ -1,0 +1,34 @@
+package Sample;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+public class Demo1 {
+	
+	public static void main(String[] args) {
+		/*List<Integer> numberList = new ArrayList<>();
+		numberList.add(10);
+		numberList.add(15);
+		numberList.add(20);
+		numberList.add(25);
+		numberList.add(30);
+		
+		System.out.println(numberList);*/
+		
+		//we can directly add soo many elements in a single line by below code.
+		List<Integer> numberList = Arrays.asList(10,15,20,25,30);
+		System.out.println(numberList);
+		
+		//filter elements from list and store it into another list without streams.
+		List<Integer> evenNumberList = new ArrayList<>();
+		for (int i: numberList) {
+			if (i%2==0) {
+				evenNumberList.add(i);
+			}
+		}
+		System.out.println("evenNumberList: " + evenNumberList);
+		
+	}
+
+}

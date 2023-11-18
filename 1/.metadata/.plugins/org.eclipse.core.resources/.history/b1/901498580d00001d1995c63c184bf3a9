@@ -1,0 +1,11 @@
+package Sample;
+
+public interface INTface {
+	
+	public void gm(String name);
+	public void ga(String name);
+	public void gn(String name);
+	
+	
+
+}

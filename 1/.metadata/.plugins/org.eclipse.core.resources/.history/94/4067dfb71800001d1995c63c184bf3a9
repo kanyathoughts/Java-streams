@@ -1,0 +1,136 @@
+package unittesting;
+
+import java.awt.Dimension;
+import java.awt.Toolkit;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
+import org.junit.rules.TestWatcher;
+
+import com.hp.lft.report.CaptureLevel;
+import com.hp.lft.report.ReportException;
+import com.hp.lft.report.Status;
+import com.hp.lft.sdk.ModifiableSDKConfiguration;
+import com.hp.lft.sdk.SDK;
+import com.hp.lft.unittesting.datadriving.DataSourceException;
+
+/**
+ * Base test class that provides all methods from the AppModLeanftFramework and
+ * some helpful stuff like test watchers. All test cases extend this class.
+ */
+public class UnitTestClassBase extends AppModLeanftFramework {
+	/** Singleton instance of the UnitTestClassBase */
+	protected static UnitTestClassBase instance;
+	/** Member variable for the class name */
+	protected static String className;
+	/** Member variable for the test method name */
+	protected String testName;
+
+	/** @inheritDoc */
+	public static void globalSetup(Class<? extends UnitTestClassBase> testClass) throws Exception {
+		if (instance == null)
+			instance = testClass.newInstance();
+		if (System.getProperty("user.name").equals("conappmodleanftsvc") || System.getProperty("user.name").equals("usleanftdevsvc")) {
+			ModifiableSDKConfiguration config = new ModifiableSDKConfiguration();
+			config.setServerAddress(new URI("ws://localhost:5096"));
+			SDK.init(config);
+		}
+		instance.classSetup();
+	}
+
+	/** @throws IOException 
+	 * @throws URISyntaxException 
+	 * @inheritDoc 
+	 */
+	@Before
+	public void beforeTest() throws URISyntaxException, IOException {
+		testSetup();
+		getReporter().setSnapshotCaptureLevel(CaptureLevel.All);
+		NodeUtils.setReporter(getReporter());
+		NodeUtils.setReportLevel(getReportConfiguration().getReportLevel());
+	}
+
+	/**
+	 * @throws DataSourceException
+	 * @inheritDoc
+	 */
+	@After
+	public void afterTest() throws DataSourceException {
+		testTearDown();
+	}
+
+	/**
+	 * @throws ReportException
+	 * @inheritDoc
+	 */
+	public static void globalTearDown() throws ReportException {
+		instance.classTearDown();
+		getReporter().generateReport();
+	}
+
+	/**
+	 * Test watcher on the test class
+	 */
+	@ClassRule
+	public static final TestWatcher classWatcher = new TestWatcher() {
+		@Override
+		protected void starting(org.junit.runner.Description description) {
+			className = description.getClassName();
+		}
+	};
+
+	/**
+	 * Test watcher on methods
+	 */
+	@Rule
+	public TestWatcher watcher = new TestWatcher() {
+		/** @inheritDoc */
+		@Override
+		protected void starting(org.junit.runner.Description description) {
+			testName = description.getMethodName();
+			System.out.println("----------------------------------------------");
+			System.out.println("Starting " + className + "." + testName);
+			Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+			System.out.println("The screen resolution is as follows: width=" + screenSize.getWidth() + " height="
+					+ screenSize.getHeight());
+		}
+
+		/** @inheritDoc */
+		@Override
+		protected void failed(Throwable e, org.junit.runner.Description description) {
+			setStatus(Status.Failed);
+			System.out.println(className + "." + testName + " failed");
+			e.printStackTrace();
+		}
+
+		/** @inheritDoc */
+		@Override
+		protected void succeeded(org.junit.runner.Description description) {
+			setStatus(Status.Passed);
+			System.out.println(className + "." + testName + " passed");
+		}
+	};
+
+	/** @inheritDoc */
+	@Override
+	protected String getTestName() {
+		return testName;
+	}
+
+	/** @inheritDoc */
+	@Override
+	protected String getClassName() {
+		return className;
+	}
+
+	@Override
+	public void display(String name) {
+		System.out.println("Display " + name);
+		
+	}
+}

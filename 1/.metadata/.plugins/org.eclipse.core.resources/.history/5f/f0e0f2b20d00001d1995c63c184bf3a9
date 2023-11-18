@@ -1,0 +1,22 @@
+package Sample;
+
+public class Main extends IntSample1{
+	public static void main(String[] args) {
+		/*Sample1 o1 = new Sample1();
+		o1.hi("Kanya");
+		
+		Abs o2 = new Sample1();
+		o2.hi("jashu");
+		o2.hello("jashu");
+		
+		Sample1 o3 = new Sample1();
+		o3.hello("Kanya");*/
+		
+		IntSample1 obj1 = new IntSample1();
+		obj1.gm("jashu");
+		obj1.ga("jashu");
+		obj1.gn("jashu");
+		obj1.ge("Jashu");
+	}
+
+}

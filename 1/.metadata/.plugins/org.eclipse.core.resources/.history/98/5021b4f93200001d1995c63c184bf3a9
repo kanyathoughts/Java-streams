@@ -1,0 +1,27 @@
+package Sample;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+
+public class StreamMethods2 {
+
+	public static void main(String[] args) {
+		//sorted
+		List<Integer> list1 = Arrays.asList(10,2,33,15,14,69);
+		
+		//list1.stream().sorted().forEach(n -> System.out.println(n)); //ascending order
+		
+		//list1.stream().sorted(Comparator.reverseOrder()).forEach(n -> System.out.println(n));
+		
+		Collections.sort(list1, Comparator.reverseOrder());
+		System.out.println(list1);
+		
+		Collections.sort(list1);
+		System.out.println(list1);
+		
+
+	}
+
+}
